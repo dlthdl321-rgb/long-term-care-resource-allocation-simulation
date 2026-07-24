@@ -10,6 +10,20 @@
 
 주요 출처는 국민건강보험공단, 건강보험심사평가원, 행정안전부 주민등록 인구통계, KOSIS, 한국사회보장정보원 등입니다. 파일별 출처·기준일·변환 내용은 [`../metadata/`](../metadata/)와 [`catalog/`](catalog/)에서 확인할 수 있습니다.
 
+## 현재 핵심 분석파일
+
+| 파일 | 행 수 | 기준기간 | 핵심 컬럼 |
+| --- | ---: | --- | --- |
+| `analysis_ready/elderly_population_sigungu_202606.csv` | 255 | 2026-06 | `총인구`, `65세이상인구`, `85세이상인구`, `고령화율` |
+| `analysis_ready/elderly_single_person_households_sigungu_202606.csv` | 255 | 2026-06 | `65세이상1인세대` |
+| `analysis_ready/ltci_demand_sigungu_bounds_202605.csv` | 235 | 2026-05-31 | `인정자_추정하한`, `인정자_추정상한` |
+| `analysis_ready/ltci_supply_sigungu_service_type_20260610.csv` | 3,600 | 2026-06-10 | `기관유형코드`, `기관수`, `정원`, 직종별 신고인력 |
+| `analysis_ready/ltci_supply_snapshots_202310_202606.csv` | 18,567 | 4개 공개시점 | 기관·정원·현원·신고인력 |
+| `analysis_ready/annual_ltci_benefit_sigungu_2013_2024.csv` | 28,629 | 2013~2024년 | `service_type`, `benefit_users`, `service_days`, 급여비 |
+| `analysis_ready/monthly_elderly_population_sigungu_2016_2025.csv` | 32,313 | 2016-01~2025-12 | 월별 총인구·65세·75세·85세 이상 인구 |
+
+행 수와 컬럼은 2026-07-24에 Python으로 전체 파일을 읽어 다시 확인했습니다. 전체 스키마 목록은 [`../metadata/current_schema_audit.json`](../metadata/current_schema_audit.json)에서 확인할 수 있습니다.
+
 ## 포함하지 않은 데이터
 
 - `data/raw/`: 대용량 원본 API 응답과 원본 압축파일
