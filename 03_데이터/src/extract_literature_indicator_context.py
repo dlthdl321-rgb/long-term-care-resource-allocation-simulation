@@ -6,7 +6,7 @@ from pypdf import PdfReader
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PDF_DIR = ROOT / "선행연구 자료"
+PDF_DIR = ROOT.parent / "04_선행연구자료"
 OUTPUT = ROOT / "outputs" / "literature_indicator_context.txt"
 KEYWORDS = (
     "비형평",

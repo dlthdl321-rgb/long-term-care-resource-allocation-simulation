@@ -11,7 +11,7 @@ import analyze_ltci_resource_allocation as analysis
 
 
 ROOT = analysis.PROJECT_ROOT
-REPORT_DIR = ROOT / "reports"
+REPORT_DIR = ROOT.parent / "02_분석보고서"
 ANALYSIS_DIR = ROOT / "outputs" / "analysis"
 STAT_DIR = ROOT / "outputs" / "statistical_readiness"
 CONFIG_PATH = ROOT / "config" / "statistical_config.json"
@@ -400,16 +400,16 @@ def main() -> int:
     )
 
     preprocessing_script = (
-        ROOT / "scripts" / "build_all_from_raw.py"
+        ROOT / "src" / "build_all_from_raw.py"
     ).read_text(encoding="utf-8")
     xlsx_extractor_script = (
-        ROOT / "scripts" / "extract_xlsx_sheet.py"
+        ROOT / "src" / "extract_xlsx_sheet.py"
     ).read_text(encoding="utf-8")
     time_series_script = (
-        ROOT / "scripts" / "build_core_time_series.py"
+        ROOT / "src" / "build_core_time_series.py"
     ).read_text(encoding="utf-8")
     analysis_script = (
-        ROOT / "scripts" / "analyze_ltci_resource_allocation.py"
+        ROOT / "src" / "analyze_ltci_resource_allocation.py"
     ).read_text(encoding="utf-8")
     lines.extend(
         [

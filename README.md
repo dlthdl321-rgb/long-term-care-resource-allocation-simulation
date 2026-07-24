@@ -12,18 +12,12 @@
 
 | 경로 | 내용 |
 | --- | --- |
-| `docs/planning/` | 문제 정의, 고객 여정, 분석 기획 |
-| `src/` | 데이터 수집·전처리·검증·통계분석 코드 |
-| `data/analysis_ready/` | 분석에 바로 사용하는 지역·연도·서비스 단위 자료 |
-| `data/processed/` | 공개 원자료를 Python으로 변환한 중간 산출물 |
-| `data/catalog/` | 정책 사건과 보완자료 목록 |
-| `metadata/` | 데이터 출처, 품질검사, 분석 준비도, 체크섬 |
-| `outputs/` | 기술통계·추론통계·시뮬레이션·검증 결과 |
-| `reports/` | 분석 범위, 통계 결과, 인과효과 자료 확보 현황 |
-| `references/` | 선행연구 서지정보와 지표 검토 내용 |
-| `config/` | 통계분석 설정 |
+| [`01_프로젝트기획/`](01_프로젝트기획/) | 문제 정의, 고객 여정 지도, 분석 기획 |
+| [`02_분석보고서/`](02_분석보고서/) | 데이터 점검, 수집 현황, 통계분석 보고서 |
+| [`03_데이터/`](03_데이터/) | 분석 데이터, 전처리 데이터, 코드, 설정, 메타데이터와 결과 |
+| [`04_선행연구자료/`](04_선행연구자료/) | 선행연구 검토 내용, 서지정보와 제도 기준 |
 
-자세한 데이터 구성과 공개 범위는 [`data/README.md`](data/README.md), 분석 설계는 [`docs/planning/03_분석기획.md`](docs/planning/03_분석기획.md)에서 확인할 수 있습니다.
+자세한 데이터 구성과 공개 범위는 [`03_데이터/data/README.md`](03_데이터/data/README.md), 분석 설계는 [`01_프로젝트기획/03_분석기획.md`](01_프로젝트기획/03_분석기획.md)에서 확인할 수 있습니다.
 
 ## 분석 범위
 
@@ -40,8 +34,8 @@
 ```bash
 python -m venv .venv
 pip install -r requirements.txt
-python src/check_preanalysis_readiness.py
-python src/analyze_ltci_resource_allocation.py
+python "03_데이터/src/check_preanalysis_readiness.py"
+python "03_데이터/src/analyze_ltci_resource_allocation.py"
 ```
 
 일부 수집 스크립트는 공공데이터포털 또는 KOSIS 인증키를 환경변수로 요구합니다. 인증키는 저장소에 포함하지 않습니다.

@@ -7,7 +7,7 @@ __pycache__/
 *.key
 *api_key*
 *apikey*
-data/raw/
+/03_데이터/data/raw/
 /results/
 *.log
 .DS_Store
