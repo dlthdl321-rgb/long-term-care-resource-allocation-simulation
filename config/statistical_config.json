@@ -1,0 +1,21 @@
+{
+  "analysis_unit": "시군구×서비스유형",
+  "current_region_count": 229,
+  "confidence_level": 0.95,
+  "alpha": 0.05,
+  "multiple_testing": "Benjamini-Hochberg FDR",
+  "random_seed": 20260723,
+  "bootstrap_iterations": 2000,
+  "minimum_complete_pairs": 30,
+  "minimum_sensitivity_rank_correlation": 0.95,
+  "maximum_tie_rate_for_rank_inference": 0.5,
+  "candidate_quantiles": [0.2, 0.25, 0.3],
+  "demand_scenarios": ["하한", "중앙", "상한"],
+  "primary_descriptive_metric": "인정자1000명당기관수_중앙수요",
+  "sensitivity_metrics": [
+    "인정자1000명당기관수_하한수요",
+    "인정자1000명당기관수_상한수요"
+  ],
+  "inference_policy": "전국 행정자료이므로 기술통계·효과크기·민감도를 우선하고 p값은 탐색적으로만 사용",
+  "causal_claim_allowed": false
+}

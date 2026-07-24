@@ -1,0 +1,2296 @@
+# 시군구별 노인장기요양 서비스 공급압력 기술·추론통계 보고서
+
+- 작성일: 2026-07-23
+- 분석 단위: 시군구×기관유형
+- 분석지역: 229개
+- 서비스 유형: 39개
+- 전처리·통계 실행: Python
+- 추론통계 성격: 전국 행정자료를 이용한 탐색적 지역 연관성 분석
+
+## 1. 분석 목적과 해석 범위
+
+2022~2025년 장기요양 인정수요 변화와 2026년 지역별 서비스 공급을 기술통계로 확인하고, 수요 증가율과 현재 인정자 1,000명당 기관 수의 관계를 서비스별 Spearman 순위상관으로 탐색했다.
+
+이 자료는 임의표본이 아니라 전국 행정자료에 가까우므로 p값보다 분포, 효과크기, 민감도와 데이터 한계를 우선한다. 분석 결과는 실제 서비스 부족, 미충족수요 또는 인과효과를 의미하지 않는다.
+
+## 2. 데이터와 전처리 검증
+
+- 실행 계보: `data/raw` 원본 XLSX·CSV → Python 시트 추출·인코딩·집계 → `data/analysis_ready` → Python 기술·추론통계
+- 수작업 값 수정: 없음. 원본 파일, 시트, 행 수, SHA-256은 `outputs/raw_preprocessing/lineage_manifest.json`에 기록
+- 핵심 출처: [국민건강보험공단 장기요양 등급판정 현황](https://www.data.go.kr/data/3051421/fileData.do), [국민건강보험공단 장기요양기관 시설별 현황](https://www.data.go.kr/data/15124763/fileData.do), [행정안전부 주민등록 인구](https://www.data.go.kr/data/15097972/fileData.do), [행정안전부 주민등록 1인세대](https://www.data.go.kr/data/15099160/fileData.do)
+- 지역명 표준화: 시도 축약명, 복합시 일반구, 세종, 군위군 이동, 인천 남구→미추홀구 반영
+- 최종 완전격자: 229개 지역×39개 서비스=8,931행
+- 지역 결합률: 인구·1인세대·공급 모두 100%
+- 지역×서비스 중복: 0건
+- 기관·정원·직종별 인력 집계 전후 합계: 전부 일치
+- 동일 입력 2회 전처리: 핵심 결과 완전 일치
+
+## 3. 지표 정의
+
+| 지표 | 정의 | 주의 |
+| --- | --- | --- |
+| 인정자 1,000명당 기관 수 | 서비스별 고유 기관 수÷인정자 추정값×1,000 | 실제 서비스 유형별 이용수요가 아님 |
+| 기관 1곳당 인정자 | 인정자 추정값÷기관 수 | 기관 0 지역에서는 계산하지 않음 |
+| 정원 공급률 | 정원÷인정자 추정값×1,000 | 정원 사용가능 서비스에만 적용 |
+| 공급 0 지역 | 전수 시설표에서 해당 지역×유형 조합이 관측되지 않음 | 미보고 가능성을 완전히 배제하지 못함 |
+| 인정자 증가율 | 2022년과 2025년 인정자 추정 중앙값 비교 | 비공개값 민감도 필요 |
+
+## 4. 기술통계
+
+### 4.1 연도별 장기요양 인정수요
+
+| 연도 | 공개합계 | 추정 하한 | 추정 상한 |
+| --- | --- | --- | --- |
+| 2022 | 1,019,130 | 1,019,130 | 1,019,130 |
+| 2023 | 1,097,856 | 1,097,856 | 1,097,856 |
+| 2024 | 1,165,030 | 1,165,030 | 1,165,030 |
+| 2025 | 1,235,045 | 1,235,045 | 1,235,045 |
+
+공개합계 기준 인정자는 2022년 1,019,130명에서 2025년 1,235,045명으로 증가했다. 최근 자료에는 5명 미만 비공개셀이 있으므로 지역 분석은 공개합계가 아니라 하한·중앙·상한으로 수행한다.
+
+### 4.2 주요 서비스의 인정자 1,000명당 기관 수 분포
+
+| 코드 | 서비스 | 평균 | 중앙값 | Q1 | Q3 | 표준편차 | 공급 0 지역 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A03 | 노인요양시설(개정법) | 3.703 | 3.426 | 2.138 | 4.848 | 2.063 | 0 |
+| A04 | 노인요양공동생활가정 | 1.352 | 0.998 | 0.501 | 1.821 | 1.379 | 29 |
+| B01 | 재가노인복지시설 방문요양 | 8.252 | 8.122 | 6.673 | 9.758 | 2.333 | 0 |
+| B02 | 재가노인복지시설 방문목욕 | 4.607 | 4.449 | 3.307 | 5.774 | 1.856 | 1 |
+| B03 | 재가노인복지시설 주야간보호 | 3.510 | 3.413 | 2.606 | 4.158 | 1.502 | 1 |
+| B05 | 재가노인복지시설 방문간호 | 0.443 | 0.374 | 0.127 | 0.667 | 0.423 | 55 |
+| C01 | 재가장기요양기관 방문요양 | 6.015 | 6.027 | 4.647 | 7.472 | 2.494 | 7 |
+| C03 | 재가장기요양기관 주야간보호 | 1.128 | 0.850 | 0.368 | 1.670 | 1.035 | 38 |
+
+평균과 중앙값이 차이나고 IQR 이상치가 존재하므로 평균만으로 지역 공급 수준을 설명하지 않는다. 상세 분포는 `outputs/analysis/supply_rate_distributions.png`에서 확인한다.
+
+### 4.3 기관 수가 정원·신고인력에 제공하는 추가 정보
+
+| 코드 | 기관수-정원 ρ | 기관수-요양보호사 ρ | 정원 사용 상태 |
+| --- | --- | --- | --- |
+| A03 | 0.965 | 0.957 | 사용가능 |
+| A04 | 0.980 | 0.969 | 사용가능 |
+| B01 | - | 0.971 | 비적용 |
+| B02 | - | 0.806 | 비적용 |
+| B03 | 0.972 | 0.966 | 사용가능 |
+| B05 | - | 0.156 | 비적용 |
+| C01 | - | 0.978 | 비적용 |
+| C03 | 0.972 | 0.964 | 사용가능 |
+
+이 상관은 기관 수와 정원·신고인력이 함께 움직이는 정도를 보여줄 뿐, 기관 수가 제공역량을 원인적으로 증가시킨다는 뜻은 아니다. 신고인력은 고유 FTE가 아니며 서비스 유형 간 중복 가능성이 있다.
+
+## 5. 추론통계
+
+### 5.1 방법
+
+- 검정: 서비스별 Spearman 순위상관
+- 변수: 2022~2025 인정자 증가율과 2026년 인정자 1,000명당 기관 수
+- 유의수준: 0.05
+- 다중검정: Benjamini–Hochberg FDR
+- 포함 조건: 완전 관측쌍 30개 이상, 공급지표 동률 50% 이하
+- 공급 0 지역: 기관 수 0으로 포함
+
+### 5.2 검정 결과
+
+| 코드 | n | Spearman ρ | p값 | FDR p값 | FDR 0.05 |
+| --- | --- | --- | --- | --- | --- |
+| B01 | 229 | 0.410 | 1.03e-10 | 1.45e-09 | 유의 |
+| B06 | 229 | 0.330 | 3.35e-07 | 2.35e-06 | 유의 |
+| C05 | 229 | 0.271 | 3.34e-05 | 0.000156 | 유의 |
+| B05 | 229 | 0.190 | 0.00397 | 0.0139 | 유의 |
+| C06 | 229 | 0.184 | 0.00534 | 0.015 | 유의 |
+| C01 | 229 | 0.158 | 0.0169 | 0.0394 | 유의 |
+| B02 | 229 | 0.132 | 0.0453 | 0.0907 | 비유의 |
+| C02 | 229 | 0.113 | 0.0887 | 0.155 | 비유의 |
+| G31 | 229 | -0.086 | 0.196 | 0.304 | 비유의 |
+| B03 | 229 | 0.071 | 0.284 | 0.397 | 비유의 |
+| C03 | 229 | 0.037 | 0.576 | 0.733 | 비유의 |
+| A03 | 229 | -0.018 | 0.781 | 0.898 | 비유의 |
+| A04 | 229 | 0.009 | 0.898 | 0.898 | 비유의 |
+| H31 | 229 | -0.009 | 0.889 | 0.898 | 비유의 |
+
+39개 서비스 중 14개를 검정했고 25개는 동률 비율 50% 초과로 제외했다. FDR 보정 후 유의한 서비스는 6개(B01, B06, C05, B05, C06, C01)였다.
+
+유의한 6개 서비스의 상관 방향은 모두 양수였다. 이는 해당 서비스에서 인정수요 증가율이 높은 지역일수록 현재 인정자당 기관 수가 낮다는 예상과 반대 방향이다. 따라서 이번 단면 상관 결과는 가설 A의 예상 패턴을 지지하지 않는다.
+
+그러나 이 검정은 비교 가능한 연도별 공급 증가율을 직접 사용하지 못했다. 따라서 `수요 증가가 공급 증가보다 빠르다`는 가설 전체를 채택하거나 기각할 수 없고, 현재 공급 수준과 수요 증가의 지역 연관성만 설명한다.
+
+## 6. 가설 판단
+
+| 가설 | 현재 판단 | 근거와 제한 |
+| --- | --- | --- |
+| A. 수요 증가가 공급 증가보다 빨라 반복 취약성이 나타남 | 보류 | 유의한 상관은 예상과 반대인 양의 방향. 비교 가능한 공급 성장률이 부족 |
+| B. 기관 수 외 정원·인력이 제공역량 차이를 설명 | 부분 지지 | 서비스별 정원·인력 분포 차이는 있으나 최신 현원·고유 FTE가 없음 |
+| C. 취약 우선배분이 균등배분보다 형평성을 개선 | 후속 시뮬레이션에서 판단 | 통계보고서에서는 시험 실행만 완료, 서비스·자원량 확정 필요 |
+| D·E. 실제 미충족수요와 접근·운영 문제가 원인 | 검증 불가 | 대기·이용거절·이동시간·운영시간 컬럼 없음 |
+
+## 7. 데이터 전처리 Python 코드와 역할
+
+원본 전처리는 `scripts/build_all_from_raw.py`, 통계 분석은 `scripts/analyze_ltci_resource_allocation.py`가 실행한다. 아래는 역할별 핵심 코드와 해석이다.
+
+### 7.1 전체 파일 읽기와 숫자형 변환
+
+```python
+frame = read_csv(path)
+frame = coerce_numeric(frame)
+```
+
+- 역할: Python이 CSV 전체 행을 읽고, 사전에 지정한 수치형 컬럼만 숫자로 변환한다.
+- 보호장치: 지역코드·날짜·Boolean 품질 플래그는 수치통계에서 제외한다.
+
+### 7.2 필수 컬럼·키·결측·중복 감사
+
+```python
+audit = audit_dataset(name, path, frame)
+```
+
+- 역할: 파일별 행·열·필수 컬럼·복합키 중복·결측·기간을 자동 검사한다.
+- 중단 조건: 필수 컬럼이나 키가 없으면 다음 단계로 진행하지 않는다.
+
+### 7.3 지역명 표준화
+
+```python
+standardized = standardize_region_columns(
+    frame, province_column, district_column, source, crosswalk=None
+)
+```
+
+- 역할: 시도 축약명, 복합시 일반구, 세종, 군위군 이동, 과거 지역명을 현행 시 단위로 맞춘다.
+- 검산: 수요·인구·1인세대·공급의 지역 결합률이 99% 미만이면 중단한다.
+
+### 7.4 일반구 공급 재집계와 공급 0 복원
+
+```python
+supply_agg = supply.groupby(
+    ['지역키', '기관유형코드', '기관유형명'], as_index=False
+)[value_columns].sum()
+complete_grid = regions.merge(service_master, how='cross')
+```
+
+- 역할: 일반구를 상위 시로 합산하고, 229개 지역×39개 서비스 전체 조합을 만든다.
+- 의미: 원 시설표에 없는 지역×서비스 조합을 공급 0 후보로 명시한다.
+- 검산: 집계 전후 기관·정원·직종별 인력 총합이 같아야 한다.
+
+### 7.5 수요 불확실성과 공급지표
+
+```python
+recognized_mid = (recognized_lower + recognized_upper) / 2
+rate = institutions / recognized_mid * 1000
+```
+
+- 역할: 비공개 인정자 값을 0으로 바꾸지 않고 하한·중앙·상한 세 조건의 공급률을 계산한다.
+- 제한: 인정자는 서비스 유형별 실제 이용자 수가 아니다.
+
+### 7.6 서비스별 정원 사용 규칙
+
+```python
+capacity_rate = capacity_rate.where(capacity_metric_usable)
+```
+
+- 역할: 방문요양·방문목욕·방문간호·복지용구에는 정원지표를 적용하지 않는다.
+- 조건부 처리: 정원형 서비스도 자료 충족률 80% 미만이면 사용을 보류한다.
+
+### 7.7 추론통계와 다중검정
+
+```python
+rho, p_value = spearmanr(demand_growth, supply_rate)
+adjusted_p = benjamini_hochberg(p_values)
+```
+
+- 역할: 서비스별 순위상관을 계산하고 반복검정의 거짓발견률을 보정한다.
+- 제외 규칙: 완전 관측쌍 30개 미만 또는 동률 50% 초과 서비스는 검정하지 않는다.
+- 해석: 상관은 원인이나 정책효과가 아니다.
+
+## 8. 한계와 다음 단계
+
+- 2026년 현재 현원·대기자·이용거절이 없다.
+- 신고인력은 고유 FTE가 아니다.
+- 공급자료의 공개시점과 생성방식이 일정하지 않아 완전한 공급 성장률을 만들기 어렵다.
+- 희소서비스 25개는 지역 공급 0이 많아 순위검정에 적합하지 않다.
+- B01은 수요 하한·상한에 따른 지역순위 안정성이 낮아 세 조건을 별도로 보고해야 한다.
+- 다음 단계에서는 주요 서비스 범위를 먼저 확정하고 하한·중앙·상한 및 취약기준 20%·25%·30% 민감도를 비교한다.
+
+## 9. 재현 파일
+
+- 원본 전처리 코드: `scripts/build_all_from_raw.py`
+- 전처리·통계 코드: `scripts/analyze_ltci_resource_allocation.py`
+- 원본-산출물 계보·해시: `outputs/raw_preprocessing/lineage_manifest.json`
+- 분석 전 검사: `scripts/check_preanalysis_readiness.py`
+- 통계 준비 검사: `scripts/check_statistical_readiness.py`
+- 통계 설정: `config/statistical_config.json`
+- 기술통계: `outputs/analysis/descriptive_statistics.csv`
+- 서비스 프로파일: `outputs/statistical_readiness/service_statistical_profiles.csv`
+- 가설 기술통계: `outputs/analysis/hypothesis_descriptive_results.csv`
+- 추론통계: `outputs/analysis/hypothesis_inference_results.csv`
+- 분포 그림: `outputs/analysis/supply_rate_distributions.png`
+
+## 10. 전처리·기술통계·추론통계 전체 Python 코드
+
+아래 두 코드는 이번 결과를 생성한 실제 실행 파일의 전체 내용이다. 첫 번째 코드가 공개 원본에서 분석용 표를 만들고, 두 번째 코드가 그 표를 검산한 뒤 통계를 계산한다.
+
+실행 명령:
+
+```powershell
+.\.venv-analysis\Scripts\python.exe -X utf8 scripts\build_all_from_raw.py
+.\.venv-analysis\Scripts\python.exe -X utf8 scripts\analyze_ltci_resource_allocation.py --stage hypotheses --run-inference
+```
+
+코드는 원본 추출, 인코딩, 지역·연령 집계, 입력·스키마 검사, 전처리 검산, 기술통계, 추론통계, 선택적 시뮬레이션 순으로 구성했다. 비슷해 보이는 검산문은 누락·잘못된 지역 결합·집계 총량 변화를 차단하는 서로 다른 검사이므로 삭제하지 않았다.
+
+### 10.1 원본에서 분석용 표를 만드는 전체 코드
+
+```python
+"""공개 원본 파일에서 분석용 표를 전부 다시 만드는 Python 파이프라인."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from build_core_time_series import main as build_time_series
+from extract_xlsx_sheet import extract
+
+
+ROOT = Path(__file__).resolve().parents[1]
+RAW = ROOT / "data" / "raw"
+PROCESSED = ROOT / "data" / "processed"
+READY = ROOT / "data" / "analysis_ready"
+MANIFEST = ROOT / "outputs" / "raw_preprocessing" / "lineage_manifest.json"
+GRADES = ["1등급", "2등급", "3등급", "4등급", "5등급", "인지지원등급"]
+STAFF = ["사회복지사", "간호사", "간호조무사", "물리치료사", "작업치료사", "요양보호사"]
+
+
+def read_csv(path: Path, encoding: str = "cp949") -> pd.DataFrame:
+    """식별자를 문자열로 보존해 CSV 전체를 읽는다."""
+    return pd.read_csv(path, encoding=encoding, dtype=str, keep_default_na=False)
+
+
+def number(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """쉼표·공백을 제거하고 지정 컬럼만 숫자로 바꾼다."""
+    result = frame.copy()
+    for column in columns:
+        if column in result:
+            result[column] = pd.to_numeric(
+                result[column].str.replace(",", "", regex=False).str.strip(),
+                errors="coerce",
+            ).fillna(0)
+    return result
+
+
+def write(frame: pd.DataFrame, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(path, index=False, encoding="utf-8-sig")
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def extract_facility_workbooks() -> list[dict[str, object]]:
+    """원본 XLSX의 필요한 시트를 표준 CSV로 추출한다."""
+    specs = [
+        ("ltci_facility_status_20260610.xlsx", "ltci_facility_status_20260610", "20260610"),
+        ("ltci_facility_status_20250401.xlsx", "ltci_facility_status_20250401", "20250401"),
+        ("time_series/facility_status/facility_status_20231026.xlsx", "time_series/facility_status_20231026", ""),
+        ("time_series/facility_status/facility_status_20240430.xlsx", "time_series/facility_status_20240430", ""),
+        ("time_series/facility_status/facility_status_20240716.xlsx", "time_series/facility_status_20240716", ""),
+    ]
+    records = []
+    for raw_name, processed_name, suffix in specs:
+        source = RAW / raw_name
+        destination = PROCESSED / processed_name
+        names = {
+            "일반현황": f"ltci_facility_general_{suffix}.csv" if suffix else "general.csv",
+            "입소인원": (
+                f"ltci_facility_{'capacity' if suffix == '20260610' else 'occupancy'}_{suffix}.csv"
+                if suffix
+                else "occupancy.csv"
+            ),
+            "인력현황": f"ltci_facility_staff_{suffix}.csv" if suffix else "staff.csv",
+        }
+        for sheet, filename in names.items():
+            target = destination / filename
+            rows = extract(source, sheet, target) - 1
+            records.append(
+                {
+                    "source": str(source.relative_to(ROOT)),
+                    "source_sha256": sha256(source),
+                    "sheet": sheet,
+                    "output": str(target.relative_to(ROOT)),
+                    "rows": rows,
+                }
+            )
+    return records
+
+
+def age_columns(columns: list[str], minimum: int, sex: str) -> list[str]:
+    selected = []
+    for column in columns:
+        match = re.search(r"(\d+)세", column)
+        if sex in column and match and int(match.group(1)) >= minimum:
+            selected.append(column)
+    return selected
+
+
+def build_current_population() -> tuple[pd.DataFrame, pd.DataFrame]:
+    source = RAW / "population_age_sex_admin_dong_202606.csv"
+    raw = read_csv(source)
+    ages = {
+        (minimum, sex): age_columns(list(raw.columns), minimum, sex)
+        for minimum in (65, 75, 85)
+        for sex in ("남자", "여자")
+    }
+    numeric = sorted({"계", *sum(ages.values(), [])})
+    raw = number(raw, numeric)
+    output = raw[["행정기관코드", "기준연월", "시도명", "시군구명", "읍면동명"]].copy()
+    output["총인구"] = raw["계"]
+    for minimum in (65, 75, 85):
+        output[f"{minimum}세이상인구"] = raw[ages[(minimum, "남자")] + ages[(minimum, "여자")]].sum(axis=1)
+    output["65세이상남자"] = raw[ages[(65, "남자")]].sum(axis=1)
+    output["65세이상여자"] = raw[ages[(65, "여자")]].sum(axis=1)
+    output["고령화율"] = np.where(
+        output["총인구"].gt(0), output["65세이상인구"] / output["총인구"] * 100, np.nan
+    )
+    write(output, READY / "elderly_population_admin_dong_202606.csv")
+
+    aggregations = {
+        "총인구": "sum", "65세이상인구": "sum", "75세이상인구": "sum",
+        "85세이상인구": "sum", "65세이상남자": "sum", "65세이상여자": "sum",
+    }
+    coded = output.assign(주민등록_시군구코드=output["행정기관코드"].str[:5])
+    sigungu = coded.groupby(["주민등록_시군구코드", "기준연월"], as_index=False).agg(
+        시도명=("시도명", "first"),
+        시군구명=("시군구명", "first"),
+        **{column: (column, method) for column, method in aggregations.items()},
+    )
+    sigungu["고령화율"] = np.where(
+        sigungu["총인구"].gt(0), sigungu["65세이상인구"] / sigungu["총인구"] * 100, np.nan
+    )
+    write(sigungu, READY / "elderly_population_sigungu_202606.csv")
+    return raw, sigungu
+
+
+def build_current_households() -> tuple[pd.DataFrame, pd.DataFrame]:
+    source = RAW / "single_person_households_age_sex_legal_dong_202606.csv"
+    raw = read_csv(source)
+    male = age_columns(list(raw.columns), 65, "남자")
+    female = age_columns(list(raw.columns), 65, "여자")
+    raw = number(raw, male + female)
+    output = raw[["법정동코드", "기준연월", "시도명", "시군구명", "읍면동명", "리명"]].copy()
+    output["65세이상남자1인세대"] = raw[male].sum(axis=1)
+    output["65세이상여자1인세대"] = raw[female].sum(axis=1)
+    output["65세이상1인세대"] = output["65세이상남자1인세대"] + output["65세이상여자1인세대"]
+    write(output, READY / "elderly_single_person_households_legal_dong_202606.csv")
+    sigungu = output.assign(법정동_시군구코드=output["법정동코드"].str[:5]).groupby(
+        ["법정동_시군구코드", "기준연월"], as_index=False
+    ).agg(
+        시도명=("시도명", "first"),
+        시군구명=("시군구명", "first"),
+        **{
+            column: (column, "sum")
+            for column in ["65세이상1인세대", "65세이상남자1인세대", "65세이상여자1인세대"]
+        },
+    )
+    write(sigungu, READY / "elderly_single_person_households_sigungu_202606.csv")
+    return raw, sigungu
+
+
+def build_current_demand() -> pd.DataFrame:
+    raw = read_csv(RAW / "ltci_grade_decisions_sigungu_202605.csv")
+    records = []
+    for (sido, sigungu), group in raw.groupby(["시도", "시군구"], sort=True):
+        applicants_hidden = group["신청자"].eq("*").sum()
+        recognized_hidden = sum(group[column].eq("*").sum() for column in GRADES)
+        applicants_known = pd.to_numeric(group["신청자"].where(group["신청자"].ne("*")), errors="coerce").sum()
+        recognized_known = sum(
+            pd.to_numeric(group[column].where(group[column].ne("*")), errors="coerce").sum()
+            for column in GRADES
+        )
+        records.append({
+            "시도": sido, "시군구": sigungu,
+            "신청자_공개값합계": int(applicants_known), "신청자_비공개셀수": int(applicants_hidden),
+            "신청자_추정하한": int(applicants_known + applicants_hidden),
+            "신청자_추정상한": int(applicants_known + 4 * applicants_hidden),
+            "인정자_공개값합계": int(recognized_known), "인정자_비공개셀수": int(recognized_hidden),
+            "인정자_추정하한": int(recognized_known + recognized_hidden),
+            "인정자_추정상한": int(recognized_known + 4 * recognized_hidden),
+            "자료기준": "2026-05-31",
+        })
+    output = pd.DataFrame(records)
+    write(output, READY / "ltci_demand_sigungu_bounds_202605.csv")
+    return output
+
+
+def location(frame: pd.DataFrame) -> pd.DataFrame:
+    parts = frame["시도 시군구 법정동명"].fillna("").str.split()
+    frame = frame.copy()
+    frame["시도명"] = parts.str[0].fillna("")
+    second, third = parts.str[1].fillna(""), parts.str[2].fillna("")
+    frame["시군구명"] = np.where(second.str.endswith("시") & third.str.endswith("구"), second + " " + third, second)
+    frame["시설_지역코드"] = frame["시도코드"].astype(str) + frame["시군구코드"].astype(str)
+    # 같은 지역코드의 주소가 있는 행을 이용해 주소 공란 행의 지역명을 복원한다.
+    for column in ("시도명", "시군구명"):
+        known = (
+            frame.loc[frame[column].astype(str).str.strip().ne("")]
+            .drop_duplicates("시설_지역코드")
+            .set_index("시설_지역코드")[column]
+        )
+        missing = frame[column].astype(str).str.strip().eq("")
+        frame.loc[missing, column] = frame.loc[missing, "시설_지역코드"].map(known).fillna("")
+    return frame
+
+
+def build_current_supply() -> pd.DataFrame:
+    directory = PROCESSED / "ltci_facility_status_20260610"
+    general = read_csv(directory / "ltci_facility_general_20260610.csv", "utf-8-sig")
+    general = general.loc[
+        general["시도코드"].str.strip().ne("")
+        & general["시군구코드"].str.strip().ne("")
+        & general["장기요양기관코드"].str.strip().ne("")
+    ]
+    general = location(general)
+    geo = general.drop_duplicates("장기요양기관코드")[
+        ["장기요양기관코드", "시설_지역코드", "시도명", "시군구명"]
+    ]
+    capacity = number(read_csv(directory / "ltci_facility_capacity_20260610.csv", "utf-8-sig"), ["정원"]).merge(
+        geo, on="장기요양기관코드", how="inner", validate="many_to_one"
+    )
+    staff = number(read_csv(directory / "ltci_facility_staff_20260610.csv", "utf-8-sig"), STAFF).merge(
+        geo, on="장기요양기관코드", how="inner", validate="many_to_one"
+    )
+    keys = ["시설_지역코드", "기관유형코드"]
+    cap = capacity.groupby(keys, as_index=False).agg(
+        시도명=("시도명", "first"), 시군구명=("시군구명", "first"),
+        기관유형명=("기관유형명", "first"), 정원=("정원", "sum"),
+        기관목록_정원=("장기요양기관코드", lambda value: set(value)),
+    )
+    people = staff.groupby(keys, as_index=False).agg(
+        시도명_인력=("시도명", "first"), 시군구명_인력=("시군구명", "first"),
+        기관유형명_인력=("기관유형코드명", "first"),
+        기관목록_인력=("장기요양기관코드", lambda value: set(value)),
+        **{column: (column, "sum") for column in STAFF},
+    )
+    supply = cap.merge(people, on=keys, how="outer")
+    supply["시도명"] = supply["시도명"].fillna(supply["시도명_인력"])
+    supply["시군구명"] = supply["시군구명"].fillna(supply["시군구명_인력"])
+    supply["기관유형명"] = supply["기관유형명"].fillna(supply["기관유형명_인력"])
+    supply["기관수"] = supply.apply(
+        lambda row: len((row["기관목록_정원"] if isinstance(row["기관목록_정원"], set) else set())
+                        | (row["기관목록_인력"] if isinstance(row["기관목록_인력"], set) else set())), axis=1
+    )
+    for column in ["정원", *STAFF]:
+        supply[column] = supply[column].fillna(0)
+    supply["자료기준"] = "2026-06-10"
+    output = supply[[
+        "시설_지역코드", "시도명", "시군구명", "기관유형코드", "기관유형명",
+        "기관수", "정원", *STAFF, "자료기준",
+    ]].sort_values(["시설_지역코드", "기관유형코드"])
+    write(output, READY / "ltci_supply_sigungu_service_type_20260610.csv")
+    return output
+
+
+def build_historical_occupancy() -> pd.DataFrame:
+    directory = PROCESSED / "ltci_facility_status_20250401"
+    general = read_csv(directory / "ltci_facility_general_20250401.csv", "utf-8-sig")
+    general = general.loc[
+        general["시도코드"].str.strip().ne("")
+        & general["시군구코드"].str.strip().ne("")
+        & general["장기요양기관코드"].str.strip().ne("")
+    ]
+    general = location(general)
+    geo = general.drop_duplicates("장기요양기관코드")[
+        ["장기요양기관코드", "시설_지역코드", "시도명", "시군구명"]
+    ]
+    occupancy = read_csv(directory / "ltci_facility_occupancy_20250401.csv", "utf-8-sig")
+    occupancy["현원결측"] = occupancy["현원"].str.strip().eq("")
+    occupancy = number(occupancy, ["정원", "현원"]).merge(
+        geo, on="장기요양기관코드", how="inner", validate="many_to_one"
+    )
+    occupancy["정원초과"] = (~occupancy["현원결측"]) & occupancy["정원"].gt(0) & occupancy["현원"].gt(occupancy["정원"])
+    keys = ["시설_지역코드", "기관유형코드"]
+    records = []
+    for key, group in occupancy.groupby(keys, sort=True):
+        known = group.loc[~group["현원결측"]]
+        service_code = key[1]
+        constrained = bool(
+            re.match(r"^(A|G|H|I|M|S)", service_code)
+            or service_code in {"B03", "B04", "C03", "C04"}
+        )
+        capacity, current = known["정원"].sum(), known["현원"].sum()
+        records.append(dict(zip(keys, key)) | {
+            "시도명": group["시도명"].iloc[0], "시군구명": group["시군구명"].iloc[0],
+            "기관유형명": group["기관유형명"].iloc[0],
+            "기관수": group["장기요양기관코드"].nunique(),
+            "현원확인기관수": known["장기요양기관코드"].nunique(),
+            "현원결측행수": int(group["현원결측"].sum()),
+            "정원합계_현원확인기관": capacity, "현원합계": current,
+            "원자료_현원정원비": current / capacity if capacity else np.nan,
+            "가동률": current / capacity if constrained and capacity else np.nan,
+            "가동률해석가능": constrained,
+            "지표해석": "정원 대비 현원 가동률" if constrained else "방문형·복지용구는 정원 대비 비율 해석 금지",
+            "정원초과행수": int(known["정원초과"].sum()) if constrained else np.nan,
+            "자료기준": "2025-04-01", "용도": "2026년 현재값이 아닌 과거 가동률 민감도 기준",
+        })
+    output = pd.DataFrame(records)
+    write(output, READY / "ltci_historical_occupancy_sigungu_service_type_20250401.csv")
+    return output
+
+
+def main() -> None:
+    READY.mkdir(parents=True, exist_ok=True)
+    lineage = extract_facility_workbooks()
+    tables = {
+        "current_population": build_current_population()[1],
+        "current_households": build_current_households()[1],
+        "current_demand": build_current_demand(),
+        "current_supply": build_current_supply(),
+        "historical_occupancy": build_historical_occupancy(),
+    }
+    build_time_series()
+    for name, frame in tables.items():
+        print(f"{name}: {len(frame):,} rows")
+    outputs = sorted(READY.glob("*.csv"))
+    payload = {
+        "pipeline": "raw -> Python extraction/transformation -> analysis_ready",
+        "manual_value_edits": False,
+        "raw_excel_extractions": lineage,
+        "analysis_ready": [
+            {"file": str(path.relative_to(ROOT)), "rows": len(read_csv(path, "utf-8-sig")), "sha256": sha256(path)}
+            for path in outputs
+        ],
+    }
+    MANIFEST.parent.mkdir(parents=True, exist_ok=True)
+    MANIFEST.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"manifest: {MANIFEST}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 10.2 XLSX 원본 시트 추출 코드
+
+```python
+#!/usr/bin/env python3
+"""Extract one XLSX worksheet to UTF-8 CSV using only the Python standard library."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import re
+import zipfile
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+
+MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+
+
+def column_number(cell_reference: str) -> int:
+    letters = re.match(r"[A-Z]+", cell_reference)
+    if not letters:
+        return 1
+    number = 0
+    for letter in letters.group(0):
+        number = number * 26 + ord(letter) - ord("A") + 1
+    return number
+
+
+def shared_strings(archive: zipfile.ZipFile) -> list[str]:
+    path = "xl/sharedStrings.xml"
+    if path not in archive.namelist():
+        return []
+    root = ET.fromstring(archive.read(path))
+    return [
+        "".join(text.text or "" for text in item.iter(f"{{{MAIN_NS}}}t"))
+        for item in root.findall(f"{{{MAIN_NS}}}si")
+    ]
+
+
+def sheet_path(archive: zipfile.ZipFile, requested_name: str) -> str:
+    workbook = ET.fromstring(archive.read("xl/workbook.xml"))
+    relationship_id = None
+    for sheet in workbook.findall(f".//{{{MAIN_NS}}}sheet"):
+        if sheet.get("name") == requested_name:
+            relationship_id = sheet.get(f"{{{REL_NS}}}id")
+            break
+    if not relationship_id:
+        raise SystemExit(f"Worksheet not found: {requested_name}")
+
+    relationships = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+    for relationship in relationships.findall(f"{{{PKG_REL_NS}}}Relationship"):
+        if relationship.get("Id") == relationship_id:
+            target = relationship.get("Target", "")
+            return target.lstrip("/") if target.startswith("/xl/") else f"xl/{target.lstrip('/')}"
+    raise SystemExit(f"Worksheet relationship not found: {requested_name}")
+
+
+def extract(input_path: Path, sheet_name: str, output_path: Path) -> int:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    row_count = 0
+    with zipfile.ZipFile(input_path) as archive:
+        strings = shared_strings(archive)
+        worksheet = sheet_path(archive, sheet_name)
+        with archive.open(worksheet) as source, output_path.open(
+            "w", encoding="utf-8-sig", newline=""
+        ) as destination:
+            writer = csv.writer(destination)
+            for event, element in ET.iterparse(source, events=("end",)):
+                if element.tag != f"{{{MAIN_NS}}}row":
+                    continue
+                cells: dict[int, str] = {}
+                for cell in element.findall(f"{{{MAIN_NS}}}c"):
+                    position = column_number(cell.get("r", "A1"))
+                    cell_type = cell.get("t", "")
+                    if cell_type == "inlineStr":
+                        value = "".join(
+                            text.text or "" for text in cell.iter(f"{{{MAIN_NS}}}t")
+                        )
+                    else:
+                        value_element = cell.find(f"{{{MAIN_NS}}}v")
+                        value = value_element.text if value_element is not None else ""
+                        if cell_type == "s" and value:
+                            value = strings[int(value)]
+                        elif cell_type == "b":
+                            value = "TRUE" if value == "1" else "FALSE"
+                    cells[position] = value
+                if cells:
+                    writer.writerow([cells.get(index, "") for index in range(1, max(cells) + 1)])
+                    row_count += 1
+                element.clear()
+    return row_count
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", required=True, type=Path)
+    parser.add_argument("--sheet", required=True)
+    parser.add_argument("--output", required=True, type=Path)
+    args = parser.parse_args()
+    count = extract(args.input, args.sheet, args.output)
+    print(f"rows={count} output={args.output}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 10.3 원본 시계열 표 생성 코드
+
+```python
+#!/usr/bin/env python3
+"""Build comparable year-end demand/population and supply-snapshot tables."""
+
+from __future__ import annotations
+
+import csv
+import re
+from collections import defaultdict
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+RAW = ROOT / "data" / "raw" / "time_series"
+PROCESSED = ROOT / "data" / "processed"
+OUTPUT = ROOT / "data" / "analysis_ready"
+
+
+def integer(value: str | None) -> int:
+    text = (value or "").replace(",", "").strip()
+    return int(text) if re.fullmatch(r"-?\d+", text) else 0
+
+
+def normalized(text: str) -> str:
+    return re.sub(r"[\s()（）]", "", text).replace("등급외(A)", "등급외A")
+
+
+def read_csv(path: Path, encoding: str = "utf-8-sig"):
+    with path.open(encoding=encoding, newline="") as handle:
+        yield from csv.DictReader(handle)
+
+
+def write_csv(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fields = list(rows[0]) if rows else []
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def build_demand() -> list[dict]:
+    output = []
+    for path in sorted((RAW / "ltci_demand").glob("*.csv")):
+        date = re.search(r"(\d{8})", path.stem).group(1)
+        groups = defaultdict(lambda: [0, 0, 0, 0])
+        for raw_row in read_csv(path, "cp949"):
+            row = {normalized(key): (value or "").strip() for key, value in raw_row.items()}
+            key = (row["시도"], row["시군구"])
+            if row.get("신청자") == "*":
+                groups[key][1] += 1
+            else:
+                groups[key][0] += integer(row.get("신청자"))
+            for column in ("1등급", "2등급", "3등급", "4등급", "5등급", "인지지원등급"):
+                if row.get(column) == "*":
+                    groups[key][3] += 1
+                else:
+                    groups[key][2] += integer(row.get(column))
+        for (sido, sigungu), values in groups.items():
+            known_app, hidden_app, known_rec, hidden_rec = values
+            output.append(
+                {
+                    "기준일": f"{date[:4]}-{date[4:6]}-{date[6:]}",
+                    "시도": sido,
+                    "시군구": sigungu,
+                    "신청자_공개값합계": known_app,
+                    "신청자_비공개셀수": hidden_app,
+                    "신청자_추정하한": known_app + hidden_app,
+                    "신청자_추정상한": known_app + 4 * hidden_app,
+                    "인정자_공개값합계": known_rec,
+                    "인정자_비공개셀수": hidden_rec,
+                    "인정자_추정하한": known_rec + hidden_rec,
+                    "인정자_추정상한": known_rec + 4 * hidden_rec,
+                    "비공개규칙주의": "2022년 파일은 5명 미만 실제 숫자가 보이며 이후 파일과 공개규칙이 다를 수 있음",
+                }
+            )
+    return output
+
+
+def age_columns(headers: list[str], minimum: int, sex: str) -> list[str]:
+    selected = []
+    for header in headers:
+        if sex not in header:
+            continue
+        match = re.search(r"(\d+)세", header)
+        if match and int(match.group(1)) >= minimum:
+            selected.append(header)
+    return selected
+
+
+def build_population() -> list[dict]:
+    output = []
+    for path in sorted((RAW / "population").glob("*.csv")):
+        rows = list(read_csv(path, "cp949"))
+        if not rows:
+            continue
+        headers = list(rows[0])
+        columns = {
+            age: age_columns(headers, age, "남자") + age_columns(headers, age, "여자")
+            for age in (65, 75, 85)
+        }
+        groups = defaultdict(lambda: [0, 0, 0, 0])
+        for row in rows:
+            key = (
+                row["기준연월"],
+                (row["시도명"] or "").strip(),
+                (row["시군구명"] or "").strip(),
+            )
+            groups[key][0] += integer(row.get("계"))
+            for index, age in enumerate((65, 75, 85), start=1):
+                groups[key][index] += sum(integer(row.get(column)) for column in columns[age])
+        for (date, sido, sigungu), values in groups.items():
+            output.append(
+                {
+                    "기준일": date,
+                    "시도명": sido,
+                    "시군구명": sigungu,
+                    "총인구": values[0],
+                    "65세이상인구": values[1],
+                    "75세이상인구": values[2],
+                    "85세이상인구": values[3],
+                    "고령화율": round(values[1] / values[0] * 100, 6) if values[0] else "",
+                }
+            )
+    return output
+
+
+def build_single_households() -> list[dict]:
+    output = []
+    for path in sorted((RAW / "single_households").glob("*.csv")):
+        rows = list(read_csv(path, "cp949"))
+        if not rows:
+            continue
+        headers = list(rows[0])
+        male = age_columns(headers, 65, "남자")
+        female = age_columns(headers, 65, "여자")
+        groups = defaultdict(lambda: [0, 0])
+        for row in rows:
+            key = (
+                row["기준연월"],
+                (row["시도명"] or "").strip(),
+                (row["시군구명"] or "").strip(),
+            )
+            groups[key][0] += sum(integer(row.get(column)) for column in male)
+            groups[key][1] += sum(integer(row.get(column)) for column in female)
+        for (date, sido, sigungu), values in groups.items():
+            output.append(
+                {
+                    "기준일": date,
+                    "시도명": sido,
+                    "시군구명": sigungu,
+                    "65세이상1인세대": sum(values),
+                    "65세이상남자1인세대": values[0],
+                    "65세이상여자1인세대": values[1],
+                }
+            )
+    return output
+
+
+def location(full_name: str | None) -> tuple[str, str]:
+    parts = (full_name or "").split()
+    if not parts:
+        return "", ""
+    sigungu = parts[1] if len(parts) > 1 else ""
+    if len(parts) > 2 and parts[1].endswith("시") and parts[2].endswith("구"):
+        sigungu = f"{parts[1]} {parts[2]}"
+    return parts[0], sigungu
+
+
+def build_supply_snapshots() -> list[dict]:
+    snapshots = [
+        ("2023-10-26", PROCESSED / "time_series/facility_status_20231026/general.csv",
+         PROCESSED / "time_series/facility_status_20231026/occupancy.csv",
+         PROCESSED / "time_series/facility_status_20231026/staff.csv"),
+        ("2024-04-30", PROCESSED / "time_series/facility_status_20240430/general.csv",
+         PROCESSED / "time_series/facility_status_20240430/occupancy.csv",
+         PROCESSED / "time_series/facility_status_20240430/staff.csv"),
+        ("2024-07-16", PROCESSED / "time_series/facility_status_20240716/general.csv",
+         PROCESSED / "time_series/facility_status_20240716/occupancy.csv",
+         PROCESSED / "time_series/facility_status_20240716/staff.csv"),
+        ("2025-04-01", PROCESSED / "ltci_facility_status_20250401/ltci_facility_general_20250401.csv",
+         PROCESSED / "ltci_facility_status_20250401/ltci_facility_occupancy_20250401.csv",
+         PROCESSED / "ltci_facility_status_20250401/ltci_facility_staff_20250401.csv"),
+        ("2026-06-10", PROCESSED / "ltci_facility_status_20260610/ltci_facility_general_20260610.csv",
+         PROCESSED / "ltci_facility_status_20260610/ltci_facility_capacity_20260610.csv",
+         PROCESSED / "ltci_facility_status_20260610/ltci_facility_staff_20260610.csv"),
+    ]
+    output = []
+    for date, general_path, occupancy_path, staff_path in snapshots:
+        geo = {}
+        region_names = {}
+        for row in read_csv(general_path):
+            if row.get("시도코드") and row.get("시군구코드"):
+                sido, sigungu = location(row.get("시도 시군구 법정동명", ""))
+                region_code = f'{row["시도코드"]}{row["시군구코드"]}'
+                if sido or sigungu:
+                    region_names[region_code] = (sido, sigungu)
+                geo.setdefault(
+                    row["장기요양기관코드"],
+                    region_code,
+                )
+        groups = defaultdict(lambda: {"institutions": set(), "capacity": 0, "current": 0, "current_rows": 0,
+                                      "social": 0, "nurse": 0, "assistant": 0, "caregiver": 0})
+        type_names = {}
+        for row in read_csv(occupancy_path):
+            inst = row["장기요양기관코드"]
+            if inst not in geo:
+                continue
+            type_code = row["기관유형코드"]
+            key = (geo[inst], type_code)
+            group = groups[key]
+            group["institutions"].add(inst)
+            group["capacity"] += integer(row.get("정원"))
+            if "현원" in row and (row.get("현원") or "").strip() != "":
+                group["current"] += integer(row.get("현원"))
+                group["current_rows"] += 1
+            type_names[type_code] = row.get("기관유형명", "")
+        if staff_path and staff_path.exists():
+            for row in read_csv(staff_path):
+                inst = row["장기요양기관코드"]
+                if inst not in geo:
+                    continue
+                type_code = row["기관유형코드"]
+                key = (geo[inst], type_code)
+                group = groups[key]
+                group["institutions"].add(inst)
+                group["social"] += integer(row.get("사회복지사"))
+                group["nurse"] += integer(row.get("간호사"))
+                group["assistant"] += integer(row.get("간호조무사"))
+                group["caregiver"] += integer(row.get("요양보호사"))
+                type_names.setdefault(type_code, row.get("기관유형코드명", ""))
+        for (region_code, type_code), group in groups.items():
+            sido, sigungu = region_names.get(region_code, ("", ""))
+            interpretable = bool(
+                re.match(r"^(A|G|H|I|M|S)", type_code)
+                or type_code in {"B03", "B04", "C03", "C04"}
+            )
+            output.append(
+                {
+                    "기준일": date,
+                    "시설_지역코드": region_code,
+                    "시도명": sido,
+                    "시군구명": sigungu,
+                    "기관유형코드": type_code,
+                    "기관유형명": type_names.get(type_code, ""),
+                    "기관수": len(group["institutions"]),
+                    "정원": group["capacity"],
+                    "현원": group["current"] if group["current_rows"] else "",
+                    "가동률": (
+                        round(group["current"] / group["capacity"], 6)
+                        if interpretable and group["current_rows"] and group["capacity"]
+                        else ""
+                    ),
+                    "가동률해석가능": interpretable,
+                    "사회복지사": group["social"],
+                    "간호사": group["nurse"],
+                    "간호조무사": group["assistant"],
+                    "요양보호사": group["caregiver"],
+                    "비교주의": "공개 스냅샷 간 추출·기관신고 체계 변경 가능; 2026년 현원 미제공",
+                }
+            )
+    return output
+
+
+def main() -> None:
+    tables = {
+        "ltci_demand_sigungu_year_end_2022_2025.csv": build_demand(),
+        "elderly_population_sigungu_year_end_2022_2025.csv": build_population(),
+        "elderly_single_households_sigungu_year_end_2022_2025.csv": build_single_households(),
+        "ltci_supply_snapshots_202310_202606.csv": build_supply_snapshots(),
+    }
+    for name, rows in tables.items():
+        write_csv(OUTPUT / name, rows)
+        print(f"{name}: {len(rows)}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 10.4 분석용 표 검산과 통계 전체 코드
+
+```python
+"""장기요양 수급 취약성과 자원배치 시뮬레이션 분석 파이프라인.
+
+이 스크립트는 다음 순서로 실행한다.
+1. 입력 파일·컬럼·키·결측·중복 감사
+2. 변수 사전과 기술통계 생성
+3. 시군구×서비스 유형 핵심 지표 계산
+4. 경쟁 가설 A~C의 탐색적 검증
+5. 선택한 서비스의 자원배치 시나리오 비교
+
+주의:
+- 기본 실행은 데이터 감사만 수행한다.
+- 지역 결합률이 기준보다 낮으면 지표 분석을 중단한다.
+- 추론통계는 --run-inference를 지정했을 때만 수행한다.
+- 기관 상세 API 1,600건 표본은 모집단 추론에 사용하지 않는다.
+- 결과는 실제 서비스 부족이나 인과효과가 아니라 상대적 공급압력과
+  설정한 가정 안의 공급지표 변화를 보여준다.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import sys
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Iterable
+
+import numpy as np
+import pandas as pd
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = PROJECT_ROOT / "data" / "analysis_ready"
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "outputs" / "analysis"
+
+FILES = {
+    "demand_current": DATA_DIR / "ltci_demand_sigungu_bounds_202605.csv",
+    "population_current": DATA_DIR / "elderly_population_sigungu_202606.csv",
+    "single_household_current": (
+        DATA_DIR / "elderly_single_person_households_sigungu_202606.csv"
+    ),
+    "supply_current": DATA_DIR / "ltci_supply_sigungu_service_type_20260610.csv",
+    "demand_panel": DATA_DIR / "ltci_demand_sigungu_year_end_2022_2025.csv",
+    "population_panel": DATA_DIR / "elderly_population_sigungu_year_end_2022_2025.csv",
+    "single_household_panel": (
+        DATA_DIR / "elderly_single_households_sigungu_year_end_2022_2025.csv"
+    ),
+    "supply_snapshots": DATA_DIR / "ltci_supply_snapshots_202310_202606.csv",
+    "historical_occupancy": (
+        DATA_DIR / "ltci_historical_occupancy_sigungu_service_type_20250401.csv"
+    ),
+}
+
+REQUIRED_COLUMNS = {
+    "demand_current": {
+        "시도",
+        "시군구",
+        "인정자_공개값합계",
+        "인정자_비공개셀수",
+        "인정자_추정하한",
+        "인정자_추정상한",
+        "자료기준",
+    },
+    "population_current": {
+        "주민등록_시군구코드",
+        "기준연월",
+        "시도명",
+        "시군구명",
+        "총인구",
+        "65세이상인구",
+        "75세이상인구",
+        "85세이상인구",
+    },
+    "single_household_current": {
+        "법정동_시군구코드",
+        "기준연월",
+        "시도명",
+        "시군구명",
+        "65세이상1인세대",
+    },
+    "supply_current": {
+        "시설_지역코드",
+        "시도명",
+        "시군구명",
+        "기관유형코드",
+        "기관유형명",
+        "기관수",
+        "정원",
+        "사회복지사",
+        "간호사",
+        "간호조무사",
+        "요양보호사",
+        "자료기준",
+    },
+    "demand_panel": {
+        "기준일",
+        "시도",
+        "시군구",
+        "인정자_공개값합계",
+        "인정자_추정하한",
+        "인정자_추정상한",
+    },
+    "population_panel": {
+        "기준일",
+        "시도명",
+        "시군구명",
+        "총인구",
+        "65세이상인구",
+        "75세이상인구",
+        "85세이상인구",
+    },
+    "single_household_panel": {
+        "기준일",
+        "시도명",
+        "시군구명",
+        "65세이상1인세대",
+    },
+    "supply_snapshots": {
+        "기준일",
+        "시설_지역코드",
+        "시도명",
+        "시군구명",
+        "기관유형코드",
+        "기관유형명",
+        "기관수",
+        "정원",
+        "현원",
+        "가동률",
+        "가동률해석가능",
+        "요양보호사",
+        "비교주의",
+    },
+    "historical_occupancy": {
+        "시설_지역코드",
+        "시도명",
+        "시군구명",
+        "기관유형코드",
+        "기관유형명",
+        "기관수",
+        "현원확인기관수",
+        "현원결측행수",
+        "정원합계_현원확인기관",
+        "현원합계",
+        "가동률",
+        "가동률해석가능",
+        "정원초과행수",
+        "자료기준",
+    },
+}
+
+KEY_COLUMNS = {
+    "demand_current": ["시도", "시군구"],
+    "population_current": ["주민등록_시군구코드"],
+    "single_household_current": ["법정동_시군구코드"],
+    "supply_current": ["시설_지역코드", "기관유형코드"],
+    "demand_panel": ["기준일", "시도", "시군구"],
+    "population_panel": ["기준일", "시도명", "시군구명"],
+    "single_household_panel": ["기준일", "시도명", "시군구명"],
+    "supply_snapshots": ["기준일", "시설_지역코드", "기관유형코드"],
+    "historical_occupancy": ["시설_지역코드", "기관유형코드"],
+}
+
+NUMERIC_COLUMNS = {
+    "신청자_공개값합계",
+    "신청자_비공개셀수",
+    "신청자_추정하한",
+    "신청자_추정상한",
+    "인정자_공개값합계",
+    "인정자_비공개셀수",
+    "인정자_추정하한",
+    "인정자_추정상한",
+    "총인구",
+    "65세이상인구",
+    "75세이상인구",
+    "85세이상인구",
+    "65세이상남자",
+    "65세이상여자",
+    "고령화율",
+    "65세이상1인세대",
+    "65세이상남자1인세대",
+    "65세이상여자1인세대",
+    "기관수",
+    "정원",
+    "현원",
+    "사회복지사",
+    "간호사",
+    "간호조무사",
+    "물리치료사",
+    "작업치료사",
+    "요양보호사",
+    "가동률",
+    "현원확인기관수",
+    "현원결측행수",
+    "정원합계_현원확인기관",
+    "현원합계",
+    "원자료_현원정원비",
+    "정원초과행수",
+}
+
+PROVINCE_ALIASES = {
+    "서울": "서울특별시",
+    "부산": "부산광역시",
+    "대구": "대구광역시",
+    "인천": "인천광역시",
+    "광주": "광주광역시",
+    "대전": "대전광역시",
+    "울산": "울산광역시",
+    "세종": "세종특별자치시",
+    "강원": "강원특별자치도",
+    "강원도": "강원특별자치도",
+    "경기": "경기도",
+    "경남": "경상남도",
+    "경북": "경상북도",
+    "전남": "전라남도",
+    "전북": "전북특별자치도",
+    "전라북도": "전북특별자치도",
+    "제주": "제주특별자치도",
+    "제주도": "제주특별자치도",
+    "충남": "충청남도",
+    "충북": "충청북도",
+}
+
+REGION_NAME_ALIASES = {
+    ("인천광역시", "남구"): "미추홀구",
+}
+
+REGION_KEY_ALIASES = {
+    ("경상북도", "군위군"): ("대구광역시", "군위군"),
+}
+
+OBSOLETE_DEMAND_REGIONS = {
+    "경기도|여주군",
+    "경기도|포천군",
+}
+
+
+@dataclass
+class AuditResult:
+    dataset: str
+    path: str
+    rows: int
+    columns: int
+    duplicate_keys: int
+    missing_cells: int
+    missing_rate: float
+    date_min: str | None
+    date_max: str | None
+    status: str
+    note: str
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--stage",
+        choices=["audit", "describe", "metrics", "hypotheses", "simulation", "all"],
+        default="audit",
+        help="실행 단계. 기본값 audit는 원자료를 변경하지 않고 품질만 검사한다.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="분석 결과 저장 폴더",
+    )
+    parser.add_argument(
+        "--crosswalk",
+        type=Path,
+        default=None,
+        help="선택 사항: source,시도명,시군구명,분석_시도명,분석_시군구명 컬럼의 지역 대응표",
+    )
+    parser.add_argument(
+        "--minimum-join-rate",
+        type=float,
+        default=0.99,
+        help="핵심 지표 분석을 허용할 최소 수요지역 결합률",
+    )
+    parser.add_argument(
+        "--run-inference",
+        action="store_true",
+        help="가설 A의 탐색적 Spearman 순위상관을 실행한다.",
+    )
+    parser.add_argument(
+        "--service-code",
+        default=None,
+        help="시뮬레이션 대상 기관유형코드. simulation 단계에서 필수",
+    )
+    parser.add_argument(
+        "--additional-units",
+        type=int,
+        default=10,
+        help="시뮬레이션에서 배치할 추가 기관 단위",
+    )
+    parser.add_argument(
+        "--candidate-quantile",
+        type=float,
+        default=0.25,
+        help="탐색용 공급 취약 분위수. 기본값 0.25",
+    )
+    return parser.parse_args()
+
+
+def read_csv(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        raise FileNotFoundError(f"필수 입력 파일이 없습니다: {path}")
+    return pd.read_csv(path, encoding="utf-8-sig", low_memory=False)
+
+
+def normalize_text(series: pd.Series) -> pd.Series:
+    return (
+        series.astype("string")
+        .str.strip()
+        .str.replace(r"\s+", " ", regex=True)
+        .replace({"_": "세종특별자치시", "<NA>": pd.NA})
+    )
+
+
+def normalize_province(series: pd.Series) -> pd.Series:
+    normalized = normalize_text(series)
+    return normalized.replace(PROVINCE_ALIASES)
+
+
+def normalize_district(series: pd.Series) -> pd.Series:
+    normalized = normalize_text(series)
+    # 수요자료는 복합시를 시 단위로 제공하므로 수원시 장안구,
+    # 창원시 의창구 등 일반구를 상위 시로 집계한다.
+    return normalized.str.replace(r"^(.+시)\s+.+구$", r"\1", regex=True)
+
+
+def numeric_candidates(frame: pd.DataFrame) -> list[str]:
+    return [
+        column
+        for column in frame.columns
+        if (
+            column in NUMERIC_COLUMNS
+            or (
+                pd.api.types.is_numeric_dtype(frame[column])
+                and not pd.api.types.is_bool_dtype(frame[column])
+                and "코드" not in column
+                and column not in {"기준일", "자료기준", "기준연월"}
+            )
+        )
+    ]
+
+
+def coerce_numeric(frame: pd.DataFrame) -> pd.DataFrame:
+    converted = frame.copy()
+    for column in numeric_candidates(converted):
+        converted[column] = pd.to_numeric(converted[column], errors="coerce")
+    return converted
+
+
+def date_bounds(frame: pd.DataFrame) -> tuple[str | None, str | None]:
+    date_columns = [
+        column
+        for column in ("기준일", "자료기준", "기준연월")
+        if column in frame.columns
+    ]
+    if not date_columns:
+        return None, None
+    parsed = pd.to_datetime(frame[date_columns[0]], errors="coerce")
+    if not parsed.notna().any():
+        return None, None
+    return parsed.min().date().isoformat(), parsed.max().date().isoformat()
+
+
+def audit_dataset(name: str, path: Path, frame: pd.DataFrame) -> AuditResult:
+    missing_columns = sorted(REQUIRED_COLUMNS[name] - set(frame.columns))
+    keys = KEY_COLUMNS[name]
+    unavailable_keys = [column for column in keys if column not in frame.columns]
+    duplicate_keys = (
+        int(frame.duplicated(keys, keep=False).sum()) if not unavailable_keys else -1
+    )
+    missing_cells = int(frame.isna().sum().sum())
+    total_cells = frame.shape[0] * frame.shape[1]
+    missing_rate = missing_cells / total_cells if total_cells else math.nan
+    date_min, date_max = date_bounds(frame)
+
+    problems = []
+    if missing_columns:
+        problems.append(f"필수 컬럼 누락: {', '.join(missing_columns)}")
+    if unavailable_keys:
+        problems.append(f"키 컬럼 누락: {', '.join(unavailable_keys)}")
+    if duplicate_keys > 0:
+        problems.append(f"중복 키 관련 행 {duplicate_keys:,}개")
+    if missing_columns or unavailable_keys:
+        status = "FAIL"
+    elif duplicate_keys > 0:
+        status = "WARN"
+    else:
+        status = "PASS"
+    return AuditResult(
+        dataset=name,
+        path=str(path.relative_to(PROJECT_ROOT)),
+        rows=len(frame),
+        columns=len(frame.columns),
+        duplicate_keys=duplicate_keys,
+        missing_cells=missing_cells,
+        missing_rate=missing_rate,
+        date_min=date_min,
+        date_max=date_max,
+        status=status,
+        note="; ".join(problems),
+    )
+
+
+def classify_variable(column: str, series: pd.Series) -> str:
+    if "코드" in column or column.endswith("ID") or column.endswith("id"):
+        return "식별자"
+    if column in {"기준일", "자료기준", "기준연월"}:
+        return "날짜·시간형"
+    if pd.api.types.is_numeric_dtype(series):
+        return "수치형"
+    return "범주형"
+
+
+def build_variable_dictionary(
+    datasets: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    records = []
+    for name, frame in datasets.items():
+        for column in frame.columns:
+            series = frame[column]
+            variable_type = classify_variable(column, series)
+            record = {
+                "데이터셋": name,
+                "칼럼": column,
+                "변수종류": variable_type,
+                "pandas_dtype": str(series.dtype),
+                "행수": len(series),
+                "결측수": int(series.isna().sum()),
+                "결측률": float(series.isna().mean()),
+                "고유값수": int(series.nunique(dropna=True)),
+            }
+            if variable_type == "수치형":
+                numeric = pd.to_numeric(series, errors="coerce")
+                record.update(
+                    {
+                        "최솟값": numeric.min(),
+                        "중앙값": numeric.median(),
+                        "평균": numeric.mean(),
+                        "최댓값": numeric.max(),
+                    }
+                )
+            records.append(record)
+    return pd.DataFrame(records)
+
+
+def descriptive_statistics(
+    datasets: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    records = []
+    for name, frame in datasets.items():
+        for column in numeric_candidates(frame):
+            values = pd.to_numeric(frame[column], errors="coerce").dropna()
+            if values.empty:
+                continue
+            q1, median, q3 = values.quantile([0.25, 0.5, 0.75])
+            mean = values.mean()
+            std = values.std(ddof=1)
+            records.append(
+                {
+                    "데이터셋": name,
+                    "칼럼": column,
+                    "유효값수": len(values),
+                    "결측수": int(frame[column].isna().sum()),
+                    "평균": mean,
+                    "중앙값": median,
+                    "최솟값": values.min(),
+                    "최댓값": values.max(),
+                    "범위": values.max() - values.min(),
+                    "1사분위수": q1,
+                    "3사분위수": q3,
+                    "사분위범위": q3 - q1,
+                    "표준편차": std,
+                    "변동계수": std / mean if mean != 0 else np.nan,
+                }
+            )
+    return pd.DataFrame(records)
+
+
+def standardize_region_columns(
+    frame: pd.DataFrame,
+    province_column: str,
+    district_column: str,
+    source: str,
+    crosswalk: pd.DataFrame | None,
+) -> pd.DataFrame:
+    result = frame.copy()
+    result["원본_시도명"] = normalize_province(result[province_column])
+    result["원본_시군구명"] = normalize_district(result[district_column])
+    for (province, old_district), current_district in REGION_NAME_ALIASES.items():
+        renamed_mask = (
+            result["원본_시도명"].eq(province)
+            & result["원본_시군구명"].eq(old_district)
+        )
+        result.loc[renamed_mask, "원본_시군구명"] = current_district
+    for (
+        old_province,
+        old_district,
+    ), (
+        current_province,
+        current_district,
+    ) in REGION_KEY_ALIASES.items():
+        moved_mask = (
+            result["원본_시도명"].eq(old_province)
+            & result["원본_시군구명"].eq(old_district)
+        )
+        result.loc[moved_mask, "원본_시도명"] = current_province
+        result.loc[moved_mask, "원본_시군구명"] = current_district
+    sejong_mask = result["원본_시도명"].eq("세종특별자치시")
+    result.loc[sejong_mask, "원본_시군구명"] = "세종특별자치시"
+    result["분석_시도명"] = result["원본_시도명"]
+    result["분석_시군구명"] = result["원본_시군구명"]
+
+    if crosswalk is not None:
+        mapping = crosswalk.loc[crosswalk["source"].eq(source)].copy()
+        mapping["시도명"] = normalize_text(mapping["시도명"])
+        mapping["시군구명"] = normalize_text(mapping["시군구명"])
+        result = result.merge(
+            mapping[
+                ["시도명", "시군구명", "분석_시도명", "분석_시군구명"]
+            ].rename(
+                columns={
+                    "시도명": "원본_시도명",
+                    "시군구명": "원본_시군구명",
+                    "분석_시도명": "대응_시도명",
+                    "분석_시군구명": "대응_시군구명",
+                }
+            ),
+            on=["원본_시도명", "원본_시군구명"],
+            how="left",
+            validate="many_to_one",
+        )
+        result["분석_시도명"] = result["대응_시도명"].fillna(result["분석_시도명"])
+        result["분석_시군구명"] = result["대응_시군구명"].fillna(
+            result["분석_시군구명"]
+        )
+        result = result.drop(columns=["대응_시도명", "대응_시군구명"])
+
+    result["지역키"] = result["분석_시도명"] + "|" + result["분석_시군구명"]
+    return result
+
+
+def load_crosswalk(path: Path | None) -> pd.DataFrame | None:
+    if path is None:
+        return None
+    crosswalk = read_csv(path)
+    required = {"source", "시도명", "시군구명", "분석_시도명", "분석_시군구명"}
+    missing = required - set(crosswalk.columns)
+    if missing:
+        raise ValueError(f"지역 대응표 필수 컬럼 누락: {sorted(missing)}")
+    return crosswalk
+
+
+def prepare_current_metrics(
+    datasets: dict[str, pd.DataFrame],
+    crosswalk: pd.DataFrame | None,
+    minimum_join_rate: float,
+    output_dir: Path,
+) -> pd.DataFrame:
+    demand = standardize_region_columns(
+        datasets["demand_current"], "시도", "시군구", "demand", crosswalk
+    )
+    population = standardize_region_columns(
+        datasets["population_current"],
+        "시도명",
+        "시군구명",
+        "population",
+        crosswalk,
+    )
+    households = standardize_region_columns(
+        datasets["single_household_current"],
+        "시도명",
+        "시군구명",
+        "single_household",
+        crosswalk,
+    )
+    supply = standardize_region_columns(
+        datasets["supply_current"], "시도명", "시군구명", "supply", crosswalk
+    )
+
+    demand["인정자_추정중앙"] = (
+        demand["인정자_추정하한"] + demand["인정자_추정상한"]
+    ) / 2
+    demand = demand.loc[demand["인정자_추정상한"].gt(0)].copy()
+    demand = demand.loc[~demand["지역키"].isin(OBSOLETE_DEMAND_REGIONS)].copy()
+
+    pop_agg = (
+        population.groupby("지역키", as_index=False)
+        .agg(
+            분석_시도명=("분석_시도명", "first"),
+            분석_시군구명=("분석_시군구명", "first"),
+            총인구=("총인구", "sum"),
+            **{
+                "65세이상인구": ("65세이상인구", "sum"),
+                "75세이상인구": ("75세이상인구", "sum"),
+                "85세이상인구": ("85세이상인구", "sum"),
+            },
+        )
+    )
+    hh_agg = (
+        households.groupby("지역키", as_index=False)["65세이상1인세대"]
+        .sum()
+    )
+    supply_value_columns = [
+        "기관수",
+        "정원",
+        "사회복지사",
+        "간호사",
+        "간호조무사",
+        "물리치료사",
+        "작업치료사",
+        "요양보호사",
+    ]
+    supply_agg = (
+        supply.groupby(
+            ["지역키", "기관유형코드", "기관유형명"],
+            as_index=False,
+            dropna=False,
+        )
+        .agg(
+            분석_시도명=("분석_시도명", "first"),
+            분석_시군구명=("분석_시군구명", "first"),
+            시설_지역코드=("시설_지역코드", lambda values: "|".join(
+                sorted({str(value) for value in values if pd.notna(value)})
+            )),
+            자료기준=("자료기준", "max"),
+            **{column: (column, "sum") for column in supply_value_columns},
+        )
+    )
+
+    demand_regions = set(demand["지역키"])
+    unused_supply = supply_agg.loc[~supply_agg["지역키"].isin(demand_regions)].copy()
+    unused_supply.to_csv(
+        output_dir / "supply_regions_outside_demand_scope.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    join_report = []
+    for name, region_frame in {
+        "population": pop_agg,
+        "single_household": hh_agg,
+        "supply": supply_agg,
+    }.items():
+        matched = demand_regions & set(region_frame["지역키"])
+        unmatched = sorted(demand_regions - set(region_frame["지역키"]))
+        join_report.append(
+            {
+                "dataset": name,
+                "demand_regions": len(demand_regions),
+                "matched_regions": len(matched),
+                "join_rate": len(matched) / len(demand_regions),
+                "unmatched_regions": "|".join(unmatched),
+            }
+        )
+    join_report_frame = pd.DataFrame(join_report)
+    join_report_frame.to_csv(
+        output_dir / "region_join_report.csv", index=False, encoding="utf-8-sig"
+    )
+    worst_join_rate = join_report_frame["join_rate"].min()
+    if worst_join_rate < minimum_join_rate:
+        raise RuntimeError(
+            f"지역 결합률 {worst_join_rate:.2%}가 기준 "
+            f"{minimum_join_rate:.2%}보다 낮습니다. "
+            "region_join_report.csv를 확인하고 --crosswalk를 지정하세요."
+        )
+
+    base = demand[
+        [
+            "지역키",
+            "분석_시도명",
+            "분석_시군구명",
+            "인정자_공개값합계",
+            "인정자_비공개셀수",
+            "인정자_추정하한",
+            "인정자_추정중앙",
+            "인정자_추정상한",
+        ]
+    ].merge(pop_agg, on=["지역키", "분석_시도명", "분석_시군구명"])
+    base = base.merge(hh_agg, on="지역키")
+    service_master = supply_agg[["기관유형코드", "기관유형명"]].drop_duplicates()
+    if service_master["기관유형코드"].duplicated().any():
+        raise RuntimeError("하나의 기관유형코드에 둘 이상의 기관유형명이 연결됩니다.")
+    complete_grid = base[["지역키"]].merge(service_master, how="cross")
+    complete_supply = complete_grid.merge(
+        supply_agg,
+        on=["지역키", "기관유형코드", "기관유형명"],
+        how="left",
+        validate="one_to_one",
+        indicator="공급원자료결합",
+    )
+    complete_supply["공급원자료행존재"] = complete_supply["공급원자료결합"].eq("both")
+    complete_supply = complete_supply.drop(columns="공급원자료결합")
+    for column in supply_value_columns:
+        complete_supply[column] = complete_supply[column].fillna(0)
+    metrics = complete_supply.merge(
+        base,
+        on="지역키",
+        how="inner",
+        validate="many_to_one",
+        suffixes=("", "_수요"),
+    )
+    for column in ["분석_시도명", "분석_시군구명"]:
+        demand_column = f"{column}_수요"
+        metrics[column] = metrics[column].fillna(metrics[demand_column])
+        metrics = metrics.drop(columns=demand_column)
+
+    visit_pattern = r"방문요양|방문목욕|방문간호|복지용구"
+    metrics["서비스분류"] = np.where(
+        metrics["기관유형명"].str.contains(visit_pattern, regex=True, na=False),
+        "방문·복지용구형",
+        "정원기반형",
+    )
+    metrics["정원개념적용"] = metrics["서비스분류"].eq("정원기반형")
+    service_rules = (
+        metrics.groupby(["기관유형코드", "기관유형명", "서비스분류"], as_index=False)
+        .agg(
+            전국기관수=("기관수", "sum"),
+            전국정원=("정원", "sum"),
+            기관존재지역수=("기관수", lambda values: int(values.gt(0).sum())),
+            정원양수지역수=("정원", lambda values: int(values.gt(0).sum())),
+        )
+    )
+    service_rules["정원개념적용"] = service_rules["서비스분류"].eq("정원기반형")
+    service_rules["정원자료충족률"] = np.where(
+        service_rules["기관존재지역수"].gt(0),
+        service_rules["정원양수지역수"] / service_rules["기관존재지역수"],
+        np.nan,
+    )
+    service_rules["정원지표사용상태"] = np.select(
+        [
+            ~service_rules["정원개념적용"],
+            service_rules["정원자료충족률"].ge(0.80),
+        ],
+        [
+            "비적용",
+            "사용가능",
+        ],
+        default="조건부_정원자료부족",
+    )
+    service_rules.to_csv(
+        output_dir / "service_metric_rules.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    metrics = metrics.merge(
+        service_rules[
+            [
+                "기관유형코드",
+                "정원자료충족률",
+                "정원지표사용상태",
+            ]
+        ],
+        on="기관유형코드",
+        how="left",
+        validate="many_to_one",
+    )
+    metrics["정원지표사용가능"] = metrics["정원지표사용상태"].eq("사용가능")
+    metrics["공급0근거"] = np.select(
+        [
+            metrics["기관수"].gt(0),
+            ~metrics["공급원자료행존재"],
+        ],
+        [
+            "기관존재",
+            "전수시설표_지역유형조합미관측",
+        ],
+        default="원자료행은있으나기관수0",
+    )
+    zero_validation = (
+        metrics.groupby(
+            ["기관유형코드", "기관유형명", "정원지표사용상태"],
+            as_index=False,
+        )
+        .agg(
+            지역수=("지역키", "nunique"),
+            기관합계=("기관수", "sum"),
+            공급0지역수=("기관수", lambda values: int(values.eq(0).sum())),
+            원자료행미관측지역수=(
+                "공급원자료행존재",
+                lambda values: int((~values).sum()),
+            ),
+        )
+    )
+    zero_validation.to_csv(
+        output_dir / "supply_zero_validation.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    for suffix, denominator in {
+        "하한수요": "인정자_추정하한",
+        "중앙수요": "인정자_추정중앙",
+        "상한수요": "인정자_추정상한",
+    }.items():
+        metrics[f"인정자1000명당기관수_{suffix}"] = (
+            metrics["기관수"] / metrics[denominator] * 1000
+        )
+        metrics[f"인정자1000명당정원_{suffix}"] = (
+            metrics["정원"] / metrics[denominator] * 1000
+        ).where(metrics["정원지표사용가능"])
+        metrics[f"인정자1000명당요양보호사_{suffix}"] = (
+            metrics["요양보호사"] / metrics[denominator] * 1000
+        )
+
+    metrics["75세이상1000명당기관수"] = (
+        metrics["기관수"] / metrics["75세이상인구"] * 1000
+    )
+    metrics["고령1인세대1000세대당기관수"] = (
+        metrics["기관수"] / metrics["65세이상1인세대"] * 1000
+    )
+    metrics["기관1곳당인정자"] = (
+        metrics["인정자_추정중앙"] / metrics["기관수"].replace(0, np.nan)
+    )
+    return metrics
+
+
+def demand_growth_panel(
+    demand_panel: pd.DataFrame,
+    crosswalk: pd.DataFrame | None,
+) -> pd.DataFrame:
+    demand = standardize_region_columns(
+        demand_panel, "시도", "시군구", "demand", crosswalk
+    )
+    demand["기준일"] = pd.to_datetime(demand["기준일"], errors="coerce")
+    demand["인정자_추정중앙"] = (
+        demand["인정자_추정하한"] + demand["인정자_추정상한"]
+    ) / 2
+    wide = demand.pivot_table(
+        index="지역키",
+        columns=demand["기준일"].dt.year,
+        values="인정자_추정중앙",
+        aggfunc="sum",
+    )
+    if 2022 not in wide or 2025 not in wide:
+        raise RuntimeError("수요 패널에 2022년 또는 2025년 자료가 없습니다.")
+    growth = wide.reset_index()
+    growth["인정자증가율_2022_2025"] = (
+        growth[2025] - growth[2022]
+    ) / growth[2022].replace(0, np.nan)
+    growth["인정자CAGR_2022_2025"] = (
+        (growth[2025] / growth[2022].replace(0, np.nan)) ** (1 / 3) - 1
+    )
+    return growth
+
+
+def quantile_candidates(
+    metrics: pd.DataFrame,
+    quantile: float,
+) -> pd.DataFrame:
+    metric_column = "인정자1000명당기관수_중앙수요"
+    result = metrics.copy()
+    result["공급하위경계"] = result.groupby("기관유형코드")[metric_column].transform(
+        lambda values: values.quantile(quantile)
+    )
+    result["공급하위후보"] = result[metric_column].le(result["공급하위경계"])
+    return result
+
+
+def plot_supply_distributions(metrics: pd.DataFrame, output_dir: Path) -> None:
+    """주요 서비스의 인정자당 기관 수 분포를 히스토그램·상자그림으로 저장한다."""
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError as exc:
+        raise RuntimeError(
+            "분포 그림 생성에는 matplotlib가 필요합니다. "
+            "requirements-analysis.txt를 설치하세요."
+        ) from exc
+
+    preferred_codes = ["A03", "A04", "B01", "B02", "B03", "B05", "C01", "C03"]
+    available = [
+        code
+        for code in preferred_codes
+        if metrics["기관유형코드"].astype(str).eq(code).any()
+    ]
+    if not available:
+        return
+    metric_column = "인정자1000명당기관수_중앙수요"
+    figure, axes = plt.subplots(
+        len(available),
+        2,
+        figsize=(12, 3 * len(available)),
+        constrained_layout=True,
+    )
+    if len(available) == 1:
+        axes = np.asarray([axes])
+    for row, code in enumerate(available):
+        values = metrics.loc[
+            metrics["기관유형코드"].astype(str).eq(code),
+            metric_column,
+        ].dropna()
+        axes[row, 0].hist(values, bins=20, color="#4472C4", edgecolor="white")
+        axes[row, 0].set_title(f"{code}: histogram")
+        axes[row, 0].set_xlabel("institutions per 1,000 recognized people")
+        axes[row, 0].set_ylabel("regions")
+        axes[row, 1].boxplot(values, orientation="horizontal")
+        axes[row, 1].set_title(f"{code}: boxplot")
+        axes[row, 1].set_xlabel("institutions per 1,000 recognized people")
+    figure.savefig(output_dir / "supply_rate_distributions.png", dpi=160)
+    plt.close(figure)
+
+
+def gini(values: Iterable[float]) -> float:
+    array = np.asarray(list(values), dtype=float)
+    array = array[np.isfinite(array)]
+    if len(array) == 0 or np.allclose(array.sum(), 0):
+        return math.nan
+    if np.any(array < 0):
+        raise ValueError("지니계수 입력값은 음수가 될 수 없습니다.")
+    array = np.sort(array)
+    index = np.arange(1, len(array) + 1)
+    return float(
+        (np.sum((2 * index - len(array) - 1) * array))
+        / (len(array) * np.sum(array))
+    )
+
+
+def theil(values: Iterable[float]) -> float:
+    array = np.asarray(list(values), dtype=float)
+    array = array[np.isfinite(array)]
+    mean = array.mean() if len(array) else math.nan
+    if not np.isfinite(mean) or mean <= 0:
+        return math.nan
+    ratio = array / mean
+    contributions = np.zeros_like(ratio)
+    positive = ratio > 0
+    contributions[positive] = ratio[positive] * np.log(ratio[positive])
+    return float(np.mean(contributions))
+
+
+def benjamini_hochberg(p_values: Iterable[float]) -> np.ndarray:
+    """Benjamini-Hochberg 방식으로 p값의 FDR 보정값을 반환한다."""
+    values = np.asarray(list(p_values), dtype=float)
+    if len(values) == 0:
+        return values
+    if np.any(~np.isfinite(values)) or np.any((values < 0) | (values > 1)):
+        raise ValueError("p값은 0~1 사이의 유한값이어야 합니다.")
+    order = np.argsort(values)
+    ranked = values[order]
+    count = len(ranked)
+    adjusted_ranked = np.minimum.accumulate(
+        (ranked * count / np.arange(1, count + 1))[::-1]
+    )[::-1]
+    adjusted = np.empty(count)
+    adjusted[order] = np.clip(adjusted_ranked, 0, 1)
+    return adjusted
+
+
+def safe_spearman(left: pd.Series, right: pd.Series) -> float:
+    """결측을 제외한 두 변수에 변동이 있을 때만 순위상관을 계산한다."""
+    pairs = pd.concat([left, right], axis=1).dropna()
+    if len(pairs) < 2 or (pairs.nunique(dropna=True) < 2).any():
+        return np.nan
+    return float(pairs.iloc[:, 0].corr(pairs.iloc[:, 1], method="spearman"))
+
+
+def scenario_summary(frame: pd.DataFrame, scenario: str) -> dict[str, float | str]:
+    supply_rate = frame["배치후_인정자1000명당기관수"]
+    return {
+        "시나리오": scenario,
+        "추가기관합계": int(frame["추가기관수"].sum()),
+        "평균공급률": float(supply_rate.mean()),
+        "중앙공급률": float(supply_rate.median()),
+        "최솟값": float(supply_rate.min()),
+        "지니계수": gini(supply_rate),
+        "Theil지수": theil(supply_rate),
+        "공급0지역수": int(frame["배치후기관수"].eq(0).sum()),
+    }
+
+
+def allocate_evenly(frame: pd.DataFrame, units: int) -> pd.Series:
+    """모든 지역의 배치 수 차이가 최대 1이 되도록 정수 자원을 배분한다."""
+    allocation = pd.Series(0, index=frame.index, dtype=int)
+    if units <= 0:
+        return allocation
+    base, remainder = divmod(units, len(frame))
+    allocation[:] = base
+    # 정수 나머지는 결과지표와 무관한 지역키 순서로 배치한다.
+    # 따라서 수요·현재 공급을 이용하는 다른 시나리오와 구분된다.
+    ordered = frame.sort_values("지역키").index
+    if remainder:
+        allocation.loc[ordered[:remainder]] += 1
+    return allocation
+
+
+def allocate_demand_proportional(frame: pd.DataFrame, units: int) -> pd.Series:
+    demand = frame["인정자_추정중앙"].clip(lower=0)
+    if demand.sum() == 0 or units <= 0:
+        return pd.Series(0, index=frame.index, dtype=int)
+    raw = demand / demand.sum() * units
+    allocation = np.floor(raw).astype(int)
+    remainder = units - int(allocation.sum())
+    if remainder:
+        fractional_order = (raw - allocation).sort_values(ascending=False).index
+        allocation.loc[fractional_order[:remainder]] += 1
+    return allocation
+
+
+def allocate_vulnerability_first(frame: pd.DataFrame, units: int) -> pd.Series:
+    allocation = pd.Series(0, index=frame.index, dtype=int)
+    if units <= 0:
+        return allocation
+    if "공급하위후보" in frame.columns and frame["공급하위후보"].any():
+        candidates = frame.loc[frame["공급하위후보"]].copy()
+    else:
+        candidates = frame.copy()
+    ordered = candidates.sort_values(
+        ["인정자1000명당기관수_중앙수요", "인정자_추정중앙"],
+        ascending=[True, False],
+    ).index
+    for index in range(units):
+        allocation.loc[ordered[index % len(ordered)]] += 1
+    return allocation
+
+
+def allocate_equity_greedy(frame: pd.DataFrame, units: int) -> pd.Series:
+    """배치할 때마다 현재 최저 공급률 지역을 다시 찾아 1단위씩 배분한다."""
+    allocation = pd.Series(0, index=frame.index, dtype=int)
+    for _ in range(max(0, units)):
+        rates = (
+            (frame["기관수"] + allocation)
+            / frame["인정자_추정중앙"]
+            * 1000
+        )
+        target = rates.idxmin()
+        allocation.loc[target] += 1
+    return allocation
+
+
+def simulate_allocations(
+    metrics: pd.DataFrame,
+    service_code: str,
+    units: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    service = metrics.loc[
+        metrics["기관유형코드"].astype(str).eq(str(service_code))
+    ].copy()
+    if service.empty:
+        raise ValueError(f"기관유형코드 {service_code!r}에 해당하는 자료가 없습니다.")
+    if units < 0:
+        raise ValueError("--additional-units는 0 이상이어야 합니다.")
+
+    allocations = {
+        "균등배분": allocate_evenly(service, units),
+        "수요비례": allocate_demand_proportional(service, units),
+        "취약지역우선": allocate_vulnerability_first(service, units),
+        # 형평성 최소화는 기관 1개씩 현재 최저 공급률 지역에 배치하는
+        # 탐욕 알고리즘의 기준안이다. 비용·운영제약 최적화가 아니다.
+        "형평성최소화_탐욕기준": allocate_equity_greedy(service, units),
+    }
+
+    detail_frames = []
+    summaries = []
+    for name, allocation in allocations.items():
+        detail = service.copy()
+        detail["시나리오"] = name
+        detail["추가기관수"] = allocation
+        detail["배치후기관수"] = detail["기관수"] + detail["추가기관수"]
+        detail["배치후_인정자1000명당기관수"] = (
+            detail["배치후기관수"] / detail["인정자_추정중앙"] * 1000
+        )
+        if int(detail["추가기관수"].sum()) != units:
+            raise AssertionError(f"{name}: 총자원 보존 검산 실패")
+        detail_frames.append(detail)
+        summaries.append(scenario_summary(detail, name))
+    return pd.concat(detail_frames, ignore_index=True), pd.DataFrame(summaries)
+
+
+def exploratory_hypotheses(
+    metrics: pd.DataFrame,
+    demand_growth: pd.DataFrame,
+    run_inference: bool,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    merged = metrics.merge(
+        demand_growth[["지역키", "인정자증가율_2022_2025"]],
+        on="지역키",
+        how="left",
+        validate="many_to_one",
+    )
+    summaries = []
+    for service_code, group in merged.groupby("기관유형코드"):
+        capacity_usable = group["정원지표사용가능"].all()
+        summaries.append(
+            {
+                "기관유형코드": service_code,
+                "기관유형명": group["기관유형명"].iloc[0],
+                "지역수": len(group),
+                "인정자증가율_중앙값": group["인정자증가율_2022_2025"].median(),
+                "인정자1000명당기관수_중앙값": group[
+                    "인정자1000명당기관수_중앙수요"
+                ].median(),
+                "기관수_중앙값": group["기관수"].median(),
+                "정원_중앙값": group["정원"].median(),
+                "요양보호사_중앙값": group["요양보호사"].median(),
+                "기관수_정원_Spearman": (
+                    safe_spearman(group["기관수"], group["정원"])
+                    if capacity_usable
+                    else np.nan
+                ),
+                "기관수_요양보호사_Spearman": safe_spearman(
+                    group["기관수"], group["요양보호사"]
+                ),
+                "상관해석제한": (
+                    "지역 단면의 기술적 연관성이다. 제공역량의 원인이나 "
+                    "실제 서비스 이용 가능성을 의미하지 않는다."
+                ),
+            }
+        )
+    inference_records: list[dict[str, float | str | int]] = []
+    if run_inference:
+        try:
+            from scipy.stats import spearmanr
+        except ImportError as exc:
+            raise RuntimeError(
+                "--run-inference에는 scipy가 필요합니다. "
+                "requirements-analysis.txt를 설치하세요."
+            ) from exc
+        for service_code, group in merged.groupby("기관유형코드"):
+            valid = group[
+                [
+                    "인정자증가율_2022_2025",
+                    "인정자1000명당기관수_중앙수요",
+                ]
+            ].dropna()
+            tied_rate = (
+                1
+                - valid["인정자1000명당기관수_중앙수요"].nunique()
+                / len(valid)
+                if len(valid)
+                else np.nan
+            )
+            if len(valid) < 30 or tied_rate > 0.50:
+                inference_records.append(
+                    {
+                        "가설": "A",
+                        "기관유형코드": service_code,
+                        "검정": "제외",
+                        "표본수": len(valid),
+                        "통계량": np.nan,
+                        "p값": np.nan,
+                        "제외이유": (
+                            "완전 관측쌍 30개 미만"
+                            if len(valid) < 30
+                            else "동률 비율 50% 초과"
+                        ),
+                        "해석제한": "희소서비스는 기술통계와 공급 0 비율을 우선한다.",
+                    }
+                )
+                continue
+            statistic, p_value = spearmanr(
+                valid["인정자증가율_2022_2025"],
+                valid["인정자1000명당기관수_중앙수요"],
+            )
+            inference_records.append(
+                {
+                    "가설": "A",
+                    "기관유형코드": service_code,
+                    "검정": "Spearman 순위상관",
+                    "표본수": len(valid),
+                    "통계량": statistic,
+                    "p값": p_value,
+                    "제외이유": "",
+                    "해석제한": (
+                        "공급 0 지역을 포함한 전국 행정자료의 탐색적 연관성이다. "
+                        "인과관계 또는 실제 미충족수요를 의미하지 않는다."
+                    ),
+                }
+            )
+    inference_frame = pd.DataFrame(inference_records)
+    if not inference_frame.empty:
+        tested = inference_frame["p값"].notna()
+        inference_frame["FDR보정p값"] = np.nan
+        inference_frame["FDR_0.05기각"] = False
+        if tested.any():
+            p_values = inference_frame.loc[tested, "p값"].to_numpy(dtype=float)
+            adjusted = benjamini_hochberg(p_values)
+            inference_frame.loc[tested, "FDR보정p값"] = adjusted
+            inference_frame.loc[tested, "FDR_0.05기각"] = adjusted < 0.05
+    return pd.DataFrame(summaries), inference_frame
+
+
+def write_json(path: Path, payload: object) -> None:
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, default=str),
+        encoding="utf-8",
+    )
+
+
+def main() -> int:
+    args = parse_args()
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    datasets: dict[str, pd.DataFrame] = {}
+    audits = []
+    for name, path in FILES.items():
+        frame = coerce_numeric(read_csv(path))
+        datasets[name] = frame
+        audits.append(audit_dataset(name, path, frame))
+
+    audit_frame = pd.DataFrame(asdict(result) for result in audits)
+    audit_frame.to_csv(
+        args.output_dir / "data_quality_audit.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    if audit_frame["status"].eq("FAIL").any():
+        print(audit_frame.to_string(index=False))
+        print("\n필수 컬럼 또는 키 문제로 분석을 중단했습니다.", file=sys.stderr)
+        return 2
+
+    dictionary = build_variable_dictionary(datasets)
+    dictionary.to_csv(
+        args.output_dir / "variable_dictionary.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    if args.stage == "audit":
+        print(audit_frame.to_string(index=False))
+        print(f"\n감사 결과: {args.output_dir}")
+        return 0
+
+    descriptions = descriptive_statistics(datasets)
+    descriptions.to_csv(
+        args.output_dir / "descriptive_statistics.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    if args.stage == "describe":
+        print(descriptions.head(30).to_string(index=False))
+        return 0
+
+    crosswalk = load_crosswalk(args.crosswalk)
+    metrics = prepare_current_metrics(
+        datasets,
+        crosswalk,
+        args.minimum_join_rate,
+        args.output_dir,
+    )
+    metrics = quantile_candidates(metrics, args.candidate_quantile)
+    metrics.to_csv(
+        args.output_dir / "current_region_service_metrics.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    plot_supply_distributions(metrics, args.output_dir)
+    if args.stage == "metrics":
+        print(metrics.head(30).to_string(index=False))
+        return 0
+
+    growth = demand_growth_panel(datasets["demand_panel"], crosswalk)
+    growth.to_csv(
+        args.output_dir / "demand_growth_2022_2025.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    hypothesis_summary, inference = exploratory_hypotheses(
+        metrics,
+        growth,
+        args.run_inference,
+    )
+    hypothesis_summary.to_csv(
+        args.output_dir / "hypothesis_descriptive_results.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    inference.to_csv(
+        args.output_dir / "hypothesis_inference_results.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    if args.stage == "hypotheses":
+        print(hypothesis_summary.to_string(index=False))
+        if not args.run_inference:
+            print("\n추론통계는 실행하지 않았습니다. 필요 시 --run-inference를 지정하세요.")
+        return 0
+
+    if args.stage in {"simulation", "all"}:
+        if not args.service_code:
+            raise ValueError(
+                "simulation 또는 all 단계에는 --service-code가 필요합니다."
+            )
+        detail, summary = simulate_allocations(
+            metrics,
+            args.service_code,
+            args.additional_units,
+        )
+        detail.to_csv(
+            args.output_dir / f"simulation_detail_{args.service_code}.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        summary.to_csv(
+            args.output_dir / f"simulation_summary_{args.service_code}.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        print(summary.to_string(index=False))
+
+    write_json(
+        args.output_dir / "run_config.json",
+        {
+            "stage": args.stage,
+            "crosswalk": str(args.crosswalk) if args.crosswalk else None,
+            "minimum_join_rate": args.minimum_join_rate,
+            "run_inference": args.run_inference,
+            "service_code": args.service_code,
+            "additional_units": args.additional_units,
+            "candidate_quantile": args.candidate_quantile,
+            "limitations": [
+                "결과는 상대적 공급압력과 조건부 시나리오이다.",
+                "실제 서비스 부족·미충족수요·인과효과를 의미하지 않는다.",
+                "기관 상세 API 비확률표본은 모집단 추론에 사용하지 않는다.",
+            ],
+        },
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```

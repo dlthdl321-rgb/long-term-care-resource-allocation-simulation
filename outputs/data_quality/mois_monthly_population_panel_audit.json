@@ -1,0 +1,22 @@
+{
+  "source_files": 40,
+  "observed_month_count": 120,
+  "period_start": "2016-01",
+  "period_end": "2025-12",
+  "missing_months": [],
+  "panel_rows": 32313,
+  "unique_region_codes": 318,
+  "duplicate_month_region_keys": 0,
+  "invalid_population_order_rows": 0,
+  "null_counts": {
+    "base_month": 0,
+    "region_code": 0,
+    "region_name_raw": 0,
+    "total_population": 57,
+    "population_65_plus": 57,
+    "population_75_plus": 57,
+    "population_85_plus": 57,
+    "share_65_plus_pct": 903
+  },
+  "pass": true
+}

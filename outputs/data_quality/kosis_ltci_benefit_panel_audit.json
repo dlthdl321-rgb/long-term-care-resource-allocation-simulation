@@ -1,0 +1,48 @@
+{
+  "source_files": 12,
+  "years": [
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "continuous_years": true,
+  "rows": 28629,
+  "unique_region_codes": 254,
+  "service_types": [
+    "계",
+    "노인요양공동생활가정",
+    "노인요양시설",
+    "노인요양시설(구법)",
+    "노인요양시설(단기보호전환)",
+    "노인전문요양시설(구법)",
+    "단기보호",
+    "방문간호",
+    "방문목욕",
+    "방문요양",
+    "복지용구",
+    "주야간보호",
+    "통합재가서비스"
+  ],
+  "duplicate_year_region_service": 0,
+  "null_counts": {
+    "year": 0,
+    "province": 0,
+    "sigungu": 0,
+    "kosis_region_code": 0,
+    "service_type": 0,
+    "benefit_users": 246,
+    "provider_count_used": 246,
+    "service_days": 1242,
+    "benefit_cost_thousand_krw": 246,
+    "nhis_payment_thousand_krw": 246
+  }
+}

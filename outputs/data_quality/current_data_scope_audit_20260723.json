@@ -1,0 +1,29 @@
+{
+  "occupancy": {
+    "rows": 6386,
+    "success": 6336,
+    "errors": 50,
+    "unique_keys": 6386,
+    "service_types": {
+      "A03": 4880,
+      "A04": 1506
+    },
+    "regions": 256,
+    "total_current_residents": 259754,
+    "median_current_residents": 29,
+    "zero_values": 10,
+    "missing_total": 0
+  },
+  "raw_files": {
+    "files": 6825,
+    "bytes": 1229686635
+  },
+  "processed_files": {
+    "files": 50,
+    "bytes": 100244616
+  },
+  "analysis_ready_files": {
+    "files": 20,
+    "bytes": 14036653
+  }
+}

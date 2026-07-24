@@ -1,0 +1,45 @@
+{
+  "source_rows": 45697,
+  "sample_rows": 1600,
+  "regions": [
+    "11",
+    "12",
+    "26",
+    "27",
+    "28",
+    "30",
+    "31",
+    "36",
+    "41",
+    "43",
+    "44",
+    "47",
+    "48",
+    "50",
+    "51",
+    "52"
+  ],
+  "per_region_limit": 100,
+  "requested_calls": 8000,
+  "endpoints": {
+    "general": "getGeneralSttusDetailInfoItem02",
+    "staff": "getStaffSttusDetailInfoItem02",
+    "facility": "getInsttSttusDetailInfoItem02",
+    "other": "getInsttEtcDetailInfoItem02",
+    "occupancy": "getAceptncNmprDetailInfoItem02"
+  },
+  "success_counts": {
+    "general": 1600,
+    "staff": 1600,
+    "facility": 1600,
+    "other": 1600,
+    "occupancy": 1600
+  },
+  "error_counts": {
+    "general": 0,
+    "staff": 0,
+    "facility": 0,
+    "other": 0,
+    "occupancy": 0
+  }
+}

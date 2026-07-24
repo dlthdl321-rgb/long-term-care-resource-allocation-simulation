@@ -1,0 +1,9 @@
+event_date,program,event,geographic_scope,identification_value,limitation,official_source
+2022-12-01,장기요양 재택의료센터,1차 시범사업 시작,28개 시군구·28개 기관,후속 확대 전 기초 처리군 확인 기준,공개 검색으로 28개 지역 전체 명단은 아직 구조화하지 못함,https://www.mohw.go.kr/board.es?act=view&bid=0027&list_no=1479644
+2023-07-01,노인 의료·돌봄 통합지원,최초 시범사업 시작,12개 시군구,처리지역이 명시된 최초 정책충격,무작위 배정이 아니며 선정편의 가능,https://www.mohw.go.kr/board.es?act=view&bid=0027&list_no=376950
+2024-01-01,장기요양 재택의료센터,2차 시범사업 운영 시작,61개 시군구·83개 기관,지역별 서비스 가용성 확대 충격,61개에는 기존 1차 지역이 포함되어 신규 33개 식별 필요,https://www.mohw.go.kr/board.es?act=view&bid=0027&list_no=1479644
+2024-11-29,의료·요양·돌봄 통합지원,시범사업 고시 시행,공모 선정 지역,제도·운영 규칙 변화 시점,지역별 실제 도입일을 직접 제공하지 않음,https://www.mohw.go.kr/board.es?act=view&bid=0026&list_no=1483770
+2025-01-01,의료·요양·돌봄 통합지원,확대 시범사업 시작,47개 시군구,확대 전후 결과 비교 후보,47개 전체 명단·각 지역 실제 개시일 추가 확인 필요,https://www.mohw.go.kr/board.es?act=view&bid=0027&list_no=1484769
+2025-04-11,의료·요양·돌봄 통합지원,추가 모집 공고,당시 참여 47개 시군구,확산·오염 시점 확인,모집일은 실제 처리 시작일이 아님,https://www.mohw.go.kr/board.es?act=view&bid=0027&list_no=1485303
+2025-10-23,의료·요양·돌봄 통합지원,전국 시범 참여 확인,229개 전 시군구,대조군 소멸 시점 명시,예산지원형 12개와 기술지원형 217개는 처리강도가 다름,https://mohw.go.kr/board.es?act=view&bid=0027&list_no=1487675
+2026-03-27,지역 돌봄 통합지원,법률 본사업 전국 시행,전국,전국 단절시계열 또는 다른 결과자료와 결합 가능,동시에 적용되어 국내 미처리 대조군 없음,https://www.mohw.go.kr/menu.es?mid=a60100000000

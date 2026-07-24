@@ -1,0 +1,22 @@
+{
+  "nhis_occupancy": {
+    "rows": 6386,
+    "success": 6386,
+    "raw_xml": 6386,
+    "total_current_residents": 261841
+  },
+  "hira_details": {
+    "hospitals": 1285,
+    "api_responses": 8995,
+    "raw_xml": 8995,
+    "errors": 0,
+    "items": 21306
+  },
+  "social_welfare": {
+    "rows": 30558,
+    "unique_codes": 30558,
+    "raw_xml_pages": 31
+  },
+  "issues": [],
+  "credential_hits": []
+}

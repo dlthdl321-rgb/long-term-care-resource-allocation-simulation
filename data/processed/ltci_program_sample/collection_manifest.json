@@ -1,0 +1,33 @@
+{
+  "source_rows": 45697,
+  "sample_rows": 1600,
+  "regions": [
+    "11",
+    "12",
+    "26",
+    "27",
+    "28",
+    "30",
+    "31",
+    "36",
+    "41",
+    "43",
+    "44",
+    "47",
+    "48",
+    "50",
+    "51",
+    "52"
+  ],
+  "per_region_limit": 100,
+  "requested_calls": 1600,
+  "endpoints": {
+    "program": "getProgramSttusDetailInfoList02"
+  },
+  "success_counts": {
+    "program": 1536
+  },
+  "error_counts": {
+    "program": 64
+  }
+}

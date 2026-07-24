@@ -1,0 +1,198 @@
+{
+  "pipeline": "raw -> Python extraction/transformation -> analysis_ready",
+  "manual_value_edits": false,
+  "raw_excel_extractions": [
+    {
+      "source": "data\\raw\\ltci_facility_status_20260610.xlsx",
+      "source_sha256": "d224f316f1b4d055f616d6ae362b6c986d8ff5248a46897224a5d9954050a249",
+      "sheet": "일반현황",
+      "output": "data\\processed\\ltci_facility_status_20260610\\ltci_facility_general_20260610.csv",
+      "rows": 31929
+    },
+    {
+      "source": "data\\raw\\ltci_facility_status_20260610.xlsx",
+      "source_sha256": "d224f316f1b4d055f616d6ae362b6c986d8ff5248a46897224a5d9954050a249",
+      "sheet": "입소인원",
+      "output": "data\\processed\\ltci_facility_status_20260610\\ltci_facility_capacity_20260610.csv",
+      "rows": 43581
+    },
+    {
+      "source": "data\\raw\\ltci_facility_status_20260610.xlsx",
+      "source_sha256": "d224f316f1b4d055f616d6ae362b6c986d8ff5248a46897224a5d9954050a249",
+      "sheet": "인력현황",
+      "output": "data\\processed\\ltci_facility_status_20260610\\ltci_facility_staff_20260610.csv",
+      "rows": 50312
+    },
+    {
+      "source": "data\\raw\\ltci_facility_status_20250401.xlsx",
+      "source_sha256": "dd73cb46f0b7054c7d1b79f2d4b70d0195a6e127baf1320580fcf6c3d823784d",
+      "sheet": "일반현황",
+      "output": "data\\processed\\ltci_facility_status_20250401\\ltci_facility_general_20250401.csv",
+      "rows": 31282
+    },
+    {
+      "source": "data\\raw\\ltci_facility_status_20250401.xlsx",
+      "source_sha256": "dd73cb46f0b7054c7d1b79f2d4b70d0195a6e127baf1320580fcf6c3d823784d",
+      "sheet": "입소인원",
+      "output": "data\\processed\\ltci_facility_status_20250401\\ltci_facility_occupancy_20250401.csv",
+      "rows": 34083
+    },
+    {
+      "source": "data\\raw\\ltci_facility_status_20250401.xlsx",
+      "source_sha256": "dd73cb46f0b7054c7d1b79f2d4b70d0195a6e127baf1320580fcf6c3d823784d",
+      "sheet": "인력현황",
+      "output": "data\\processed\\ltci_facility_status_20250401\\ltci_facility_staff_20250401.csv",
+      "rows": 50315
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20231026.xlsx",
+      "source_sha256": "9d9b605e5c189985a53c30d61e51e6c83699472055b9f0ead5a3b30d72ccbed5",
+      "sheet": "일반현황",
+      "output": "data\\processed\\time_series\\facility_status_20231026\\general.csv",
+      "rows": 65412
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20231026.xlsx",
+      "source_sha256": "9d9b605e5c189985a53c30d61e51e6c83699472055b9f0ead5a3b30d72ccbed5",
+      "sheet": "입소인원",
+      "output": "data\\processed\\time_series\\facility_status_20231026\\occupancy.csv",
+      "rows": 53324
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20231026.xlsx",
+      "source_sha256": "9d9b605e5c189985a53c30d61e51e6c83699472055b9f0ead5a3b30d72ccbed5",
+      "sheet": "인력현황",
+      "output": "data\\processed\\time_series\\facility_status_20231026\\staff.csv",
+      "rows": 103930
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20240430.xlsx",
+      "source_sha256": "d6b2970393af9a302bb17093709d3bc2c3e12297145d60ee36c122317615adcd",
+      "sheet": "일반현황",
+      "output": "data\\processed\\time_series\\facility_status_20240430\\general.csv",
+      "rows": 29857
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20240430.xlsx",
+      "source_sha256": "d6b2970393af9a302bb17093709d3bc2c3e12297145d60ee36c122317615adcd",
+      "sheet": "입소인원",
+      "output": "data\\processed\\time_series\\facility_status_20240430\\occupancy.csv",
+      "rows": 32181
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20240430.xlsx",
+      "source_sha256": "d6b2970393af9a302bb17093709d3bc2c3e12297145d60ee36c122317615adcd",
+      "sheet": "인력현황",
+      "output": "data\\processed\\time_series\\facility_status_20240430\\staff.csv",
+      "rows": 48267
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20240716.xlsx",
+      "source_sha256": "905af8cbadec7244cc182c0f9ffa2a4843d0ec6f72061382e40431e9159cad1b",
+      "sheet": "일반현황",
+      "output": "data\\processed\\time_series\\facility_status_20240716\\general.csv",
+      "rows": 30761
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20240716.xlsx",
+      "source_sha256": "905af8cbadec7244cc182c0f9ffa2a4843d0ec6f72061382e40431e9159cad1b",
+      "sheet": "입소인원",
+      "output": "data\\processed\\time_series\\facility_status_20240716\\occupancy.csv",
+      "rows": 32593
+    },
+    {
+      "source": "data\\raw\\time_series\\facility_status\\facility_status_20240716.xlsx",
+      "source_sha256": "905af8cbadec7244cc182c0f9ffa2a4843d0ec6f72061382e40431e9159cad1b",
+      "sheet": "인력현황",
+      "output": "data\\processed\\time_series\\facility_status_20240716\\staff.csv",
+      "rows": 49561
+    }
+  ],
+  "analysis_ready": [
+    {
+      "file": "data\\analysis_ready\\caregiver_age_workforce_20260430.csv",
+      "rows": 6,
+      "sha256": "8ecf096dbab310307ea766c976915b5ef2028db25542827917c80da1ae297976"
+    },
+    {
+      "file": "data\\analysis_ready\\caregiver_exam_applicants_aggregate_2020_2026.csv",
+      "rows": 15828,
+      "sha256": "7ae042fc6ba754966edf99992dc59c646d690a329a16afe2625a78c45b9c3254"
+    },
+    {
+      "file": "data\\analysis_ready\\elderly_care_service_supply_sigungu_20240423.csv",
+      "rows": 229,
+      "sha256": "d48911e67aa86154704a021f0f12a37137a3cf75f7d66faf4ac20134610215c7"
+    },
+    {
+      "file": "data\\analysis_ready\\elderly_population_admin_dong_202606.csv",
+      "rows": 3618,
+      "sha256": "2fa49f073057ff28e2142ac87bef4a1fed935e3cf96c6ec60373fa9acf60a096"
+    },
+    {
+      "file": "data\\analysis_ready\\elderly_population_sigungu_202606.csv",
+      "rows": 255,
+      "sha256": "eda3339788c4d51d38b8b620d1e3154e97808dc4399cd1f4837bb5625904b855"
+    },
+    {
+      "file": "data\\analysis_ready\\elderly_population_sigungu_year_end_2022_2025.csv",
+      "rows": 1004,
+      "sha256": "86a9b617e9d81c6012604e6c0fd6af993e717e698d395edf4463e0641248ac70"
+    },
+    {
+      "file": "data\\analysis_ready\\elderly_single_households_sigungu_year_end_2022_2025.csv",
+      "rows": 1004,
+      "sha256": "f9f1638378474a5d76e703aa7edab7fb7bf45baf0f082ec65951153d7d4043cd"
+    },
+    {
+      "file": "data\\analysis_ready\\elderly_single_person_households_legal_dong_202606.csv",
+      "rows": 18623,
+      "sha256": "e0cf960f1e6f7d15c2e29abf4c3dc314bdc3ffeb3067e995a1a8144f95d09ad3"
+    },
+    {
+      "file": "data\\analysis_ready\\elderly_single_person_households_sigungu_202606.csv",
+      "rows": 255,
+      "sha256": "0129954de65c2bc175be6a9d5e6b24c3241c6ea16f53669bfdb6c56fde766505"
+    },
+    {
+      "file": "data\\analysis_ready\\hira_nursing_hospital_supply_sigungu_20260723.csv",
+      "rows": 235,
+      "sha256": "b28c6190ed0cc23ada9408c5638ef166f61eaf79b91bb4a853fe2b78cc918777"
+    },
+    {
+      "file": "data\\analysis_ready\\ltci_demand_sigungu_202605.csv",
+      "rows": 235,
+      "sha256": "f49cbf71775a02af7a305313de4527f35a79d22d7f3645bf5334e32f4866c59f"
+    },
+    {
+      "file": "data\\analysis_ready\\ltci_demand_sigungu_bounds_202605.csv",
+      "rows": 235,
+      "sha256": "ea4625fcb395d7270728df661b2e62298c16fe9783851f07be80225cd04edb68"
+    },
+    {
+      "file": "data\\analysis_ready\\ltci_demand_sigungu_year_end_2022_2025.csv",
+      "rows": 920,
+      "sha256": "0fe6a510c71d5793e8b229632b4338e8eee018aa86971ab1d2aeaaf4c6b994f0"
+    },
+    {
+      "file": "data\\analysis_ready\\ltci_historical_occupancy_sigungu_service_type_20250401.csv",
+      "rows": 2945,
+      "sha256": "5673c152f6e97bf8b322f2133e6686c271e5919c76acc46a71bda5153527b9a7"
+    },
+    {
+      "file": "data\\analysis_ready\\ltci_supply_sigungu_service_type_20260610.csv",
+      "rows": 3600,
+      "sha256": "a7441ad3ea13a3c743e4b58fcf3b1e8ff6110d5bbd1ef1839263ae227661cc62"
+    },
+    {
+      "file": "data\\analysis_ready\\ltci_supply_snapshots_202310_202606.csv",
+      "rows": 18567,
+      "sha256": "8f3aec7a510b6da94237c3699a6558bd88405a1ef1308dd88c39b486b104c567"
+    },
+    {
+      "file": "data\\analysis_ready\\region_reference_sigungu_202506.csv",
+      "rows": 252,
+      "sha256": "c58a9ebd922cbe04760d6ed79315c9f4c3e416d0944a16a2d309376628f294ed"
+    }
+  ]
+}

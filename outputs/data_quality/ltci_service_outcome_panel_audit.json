@@ -1,0 +1,20 @@
+{
+  "rows": 2994,
+  "years": [
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "unique_region_codes": 254,
+  "duplicate_year_region": 0,
+  "warning": "서비스별 이용자는 중복될 수 있으므로 home/facility user sum은 고유 인원이 아니다. facility_user_share_proxy_pct는 시설 신규입소율이 아닌 연간 시설급여 이용자 비중 대체지표다."
+}

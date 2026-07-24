@@ -1,0 +1,14 @@
+{
+  "stage": "simulation",
+  "crosswalk": null,
+  "minimum_join_rate": 0.99,
+  "run_inference": false,
+  "service_code": "B01",
+  "additional_units": 0,
+  "candidate_quantile": 0.25,
+  "limitations": [
+    "결과는 상대적 공급압력과 조건부 시나리오이다.",
+    "실제 서비스 부족·미충족수요·인과효과를 의미하지 않는다.",
+    "기관 상세 API 비확률표본은 모집단 추론에 사용하지 않는다."
+  ]
+}

@@ -1,0 +1,10 @@
+﻿dataset,path,rows,columns,duplicate_keys,missing_cells,missing_rate,date_min,date_max,status,note
+demand_current,data\analysis_ready\ltci_demand_sigungu_bounds_202605.csv,235,11,0,0,0.0,2026-05-31,2026-05-31,PASS,
+population_current,data\analysis_ready\elderly_population_sigungu_202606.csv,255,11,0,0,0.0,2026-06-30,2026-06-30,PASS,
+single_household_current,data\analysis_ready\elderly_single_person_households_sigungu_202606.csv,255,7,0,1,0.0005602240896358543,2026-06-30,2026-06-30,PASS,
+supply_current,data\analysis_ready\ltci_supply_sigungu_service_type_20260610.csv,3600,14,0,0,0.0,2026-06-10,2026-06-10,PASS,
+demand_panel,data\analysis_ready\ltci_demand_sigungu_year_end_2022_2025.csv,920,12,0,2,0.00018115942028985507,2022-12-31,2025-12-31,PASS,
+population_panel,data\analysis_ready\elderly_population_sigungu_year_end_2022_2025.csv,1004,8,0,4,0.00049800796812749,2022-12-31,2025-12-31,PASS,
+single_household_panel,data\analysis_ready\elderly_single_households_sigungu_year_end_2022_2025.csv,1004,6,0,4,0.0006640106241699867,2022-12-31,2025-12-31,PASS,
+supply_snapshots,data\analysis_ready\ltci_supply_snapshots_202310_202606.csv,18567,16,0,17967,0.060480287607044755,2023-10-26,2026-06-10,PASS,
+historical_occupancy,data\analysis_ready\ltci_historical_occupancy_sigungu_service_type_20250401.csv,2945,17,0,4161,0.08311195445920304,2025-04-01,2025-04-01,PASS,

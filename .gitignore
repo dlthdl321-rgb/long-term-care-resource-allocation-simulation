@@ -1,0 +1,16 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+*.key
+*api_key*
+*apikey*
+data/raw/
+/results/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
