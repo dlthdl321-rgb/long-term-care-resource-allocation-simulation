@@ -462,7 +462,7 @@ def main() -> int:
         ]
     )
 
-    report_path = REPORT_DIR / "statistical_analysis_report_20260723.md"
+    report_path = REPORT_DIR / "07_기술통계와_추론통계_분석보고서.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(report_path)
     print(

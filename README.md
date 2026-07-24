@@ -23,7 +23,7 @@
 | `references/` | 선행연구 서지정보와 지표 검토 내용 |
 | `config/` | 통계분석 설정 |
 
-자세한 데이터 구성과 공개 범위는 [`data/README.md`](data/README.md), 분석 설계는 [`docs/planning/03_analysis_plan.md`](docs/planning/03_analysis_plan.md)에서 확인할 수 있습니다.
+자세한 데이터 구성과 공개 범위는 [`data/README.md`](data/README.md), 분석 설계는 [`docs/planning/03_분석기획.md`](docs/planning/03_분석기획.md)에서 확인할 수 있습니다.
 
 ## 분석 범위
 
