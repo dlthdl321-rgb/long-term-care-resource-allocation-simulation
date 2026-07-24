@@ -1,6 +1,6 @@
 # Python 분석 실행 전 계획
 
-이 문서는 `scripts/analyze_ltci_resource_allocation.py`를 실제 실행하기 전에
+이 문서는 [`../../04_분석코드/analyze_ltci_resource_allocation.py`](../../04_분석코드/analyze_ltci_resource_allocation.py)를 실제 실행하기 전에
 입력·계산·출력·중단 조건을 검토하기 위한 문서다. 아직 분석 결과를 의미하지 않는다.
 
 ## 0. 분석 환경
@@ -74,26 +74,26 @@
 
 ```powershell
 # 1단계: 데이터 감사만 실행
-python scripts/analyze_ltci_resource_allocation.py --stage audit
+python "04_분석코드/analyze_ltci_resource_allocation.py" --stage audit
 
 # 2단계: 기술통계
-python scripts/analyze_ltci_resource_allocation.py --stage describe
+python "04_분석코드/analyze_ltci_resource_allocation.py" --stage describe
 
 # 3단계: 표준 지역명 규칙을 적용한 핵심 지표
-python scripts/analyze_ltci_resource_allocation.py `
+python "04_분석코드/analyze_ltci_resource_allocation.py" `
   --stage metrics
 
 # 4단계: 기술통계 기반 가설 확인
-python scripts/analyze_ltci_resource_allocation.py `
+python "04_분석코드/analyze_ltci_resource_allocation.py" `
   --stage hypotheses
 
 # 추론통계는 사용자가 확인한 후에만 별도 실행
-python scripts/analyze_ltci_resource_allocation.py `
+python "04_분석코드/analyze_ltci_resource_allocation.py" `
   --stage hypotheses `
   --run-inference
 
 # 5단계: 서비스 코드와 추가 자원 수를 확정한 뒤 실행
-python scripts/analyze_ltci_resource_allocation.py `
+python "04_분석코드/analyze_ltci_resource_allocation.py" `
   --stage simulation `
   --service-code B01 `
   --additional-units 10

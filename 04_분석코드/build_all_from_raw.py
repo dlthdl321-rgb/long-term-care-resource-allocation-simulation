@@ -14,7 +14,7 @@ from build_core_time_series import main as build_time_series
 from extract_xlsx_sheet import extract
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "03_데이터"
 RAW = ROOT / "data" / "raw"
 PROCESSED = ROOT / "data" / "processed"
 READY = ROOT / "data" / "analysis_ready"

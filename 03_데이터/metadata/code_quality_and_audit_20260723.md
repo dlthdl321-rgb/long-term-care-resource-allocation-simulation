@@ -1,7 +1,7 @@
 # 분석 코드 품질 검토 및 데이터 audit 결과
 
 - 검토일: 2026-07-23
-- 코드: `scripts/analyze_ltci_resource_allocation.py`
+- 코드: [`../../04_분석코드/analyze_ltci_resource_allocation.py`](../../04_분석코드/analyze_ltci_resource_allocation.py)
 - 실행 환경: Python 3.13.1, NumPy 2.5.1, pandas 2.3.3, SciPy 1.18.0
 - 실행 범위: `--stage audit`
 - 미실행 범위: 기술통계, 지역결합, 지표, 가설, 추론통계, 시뮬레이션

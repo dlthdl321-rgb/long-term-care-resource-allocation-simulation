@@ -9,6 +9,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+from project_paths import RAW_DIR
 
 ORG_ID = "350"
 TABLE_ID = "DT_35006_N030"
@@ -17,7 +18,7 @@ LIST_URL = (
     f"?org_id={ORG_ID}&tbl_id={TABLE_ID}"
 )
 DOWNLOAD_URL = "https://kosis.kr/file_mass/file_down.jsp"
-OUTPUT_DIR = Path("data/raw/causal_panel/kosis_ltci_benefit")
+OUTPUT_DIR = RAW_DIR / "causal_panel" / "kosis_ltci_benefit"
 
 
 def sha256(path: Path) -> str:

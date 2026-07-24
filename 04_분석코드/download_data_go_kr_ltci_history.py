@@ -10,6 +10,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+from project_paths import RAW_DIR
 
 PUBLIC_DATA_PK = "3051421"
 PUBLIC_DATA_DETAIL_PK = "uddi:7b2c3381-2bce-421a-8ae6-e83f77d824ee"
@@ -17,7 +18,7 @@ LANDING_URL = f"https://www.data.go.kr/data/{PUBLIC_DATA_PK}/fileData.do"
 HISTORY_URL = "https://www.data.go.kr/tcs/dss/selectHistAndCsvData.do"
 DETAIL_URL = "https://www.data.go.kr/tcs/dss/selectDpkDetailInfo.do"
 FILE_URL = "https://www.data.go.kr/cmm/cmm/fileDownload.do"
-OUTPUT_DIR = Path("data/raw/monthly_panel/ltci_grade_decisions")
+OUTPUT_DIR = RAW_DIR / "monthly_panel" / "ltci_grade_decisions"
 
 
 def fetch(opener: urllib.request.OpenerDirector, url: str) -> bytes:

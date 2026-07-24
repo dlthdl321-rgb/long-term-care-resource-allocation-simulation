@@ -14,7 +14,7 @@
 
 - 페이지별 원본 XML 31개: `data/raw/social_welfare_facilities_xml/`
 - 분석용 목록: `data/processed/social_welfare_facility_list_20260723.csv`
-- 재수집 스크립트: `scripts/collect_social_welfare_facility_list.ps1`
+- 재수집 스크립트: [`../../04_분석코드/collect_social_welfare_facility_list.ps1`](../../04_분석코드/collect_social_welfare_facility_list.ps1)
 
 ## 주요 컬럼
 

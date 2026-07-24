@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $baseUrl = "https://apis.data.go.kr/B554287/sclWlfrFcltInfoInqirService1/getNFcltBizInqire"
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Join-Path (Split-Path -Parent $PSScriptRoot) '03_데이터'
 $rawDir = Join-Path $projectRoot "data\raw\social_welfare_facilities_xml"
 $processedPath = Join-Path $projectRoot "data\processed\social_welfare_facility_list_20260723.csv"
 New-Item -ItemType Directory -Force -Path $rawDir | Out-Null

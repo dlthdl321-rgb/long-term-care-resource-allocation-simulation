@@ -20,15 +20,16 @@ import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from project_paths import PROCESSED_DIR, RAW_DIR
 
 BASE_URL = (
     "https://apis.data.go.kr/B550928/getLtcInsttDetailInfoService02/"
     "getAceptncNmprDetailInfoItem02"
 )
-SOURCE = Path("data/processed/ltci_institutions_search_nationwide_20260722.csv")
-RAW_DIR = Path("data/raw/nhis_ltci_detail_occupancy_20260723")
-OUTPUT = Path("data/processed/nhis_ltci_institutional_occupancy_20260723.csv")
-MANIFEST = Path("data/raw/nhis_ltci_detail_occupancy_20260723/manifest.json")
+SOURCE = PROCESSED_DIR / "ltci_institutions_search_nationwide_20260722.csv"
+DETAIL_RAW_DIR = RAW_DIR / "nhis_ltci_detail_occupancy_20260723"
+OUTPUT = PROCESSED_DIR / "nhis_ltci_institutional_occupancy_20260723.csv"
+MANIFEST = DETAIL_RAW_DIR / "manifest.json"
 TARGET_TYPES = {"A03", "A04"}
 
 
@@ -50,7 +51,7 @@ def flatten_item(root: ET.Element) -> dict[str, str]:
 def fetch(row: dict[str, str], key: str) -> dict[str, str]:
     institution = row["longTermAdminSym"]
     service_type = row["adminPttnCd"]
-    path = RAW_DIR / service_type / f"{institution}.xml"
+    path = DETAIL_RAW_DIR / service_type / f"{institution}.xml"
     path.parent.mkdir(parents=True, exist_ok=True)
     payload: bytes | None = None
     error = ""
@@ -110,7 +111,7 @@ def main() -> None:
     key = os.environ.get("DATA_GO_KR_SERVICE_KEY", "").strip()
     if not key:
         raise SystemExit("DATA_GO_KR_SERVICE_KEY is required.")
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    DETAIL_RAW_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
     with SOURCE.open(encoding="utf-8-sig", newline="") as handle:

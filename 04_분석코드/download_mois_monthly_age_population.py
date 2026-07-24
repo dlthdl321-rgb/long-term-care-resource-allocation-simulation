@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from project_paths import RAW_DIR
 
 BASE_URL = "https://jumin.mois.go.kr"
 LANDING_URL = f"{BASE_URL}/ageStatMonth.do"
@@ -93,7 +94,7 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("data/raw/monthly_panel/mois_age_population"),
+        default=RAW_DIR / "monthly_panel" / "mois_age_population",
     )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()

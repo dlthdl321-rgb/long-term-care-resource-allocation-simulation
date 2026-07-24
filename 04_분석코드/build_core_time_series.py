@@ -9,7 +9,7 @@ from collections import defaultdict
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "03_데이터"
 RAW = ROOT / "data" / "raw" / "time_series"
 PROCESSED = ROOT / "data" / "processed"
 OUTPUT = ROOT / "data" / "analysis_ready"

@@ -1,6 +1,6 @@
 # 분석 전 준비상태 자동 점검 결과
 
-- 실행 도구: `scripts/check_preanalysis_readiness.py`
+- 실행 도구: `04_분석코드/check_preanalysis_readiness.py`
 - 전체 검사: 31개
 - 통과: 28개
 - 주의: 3개

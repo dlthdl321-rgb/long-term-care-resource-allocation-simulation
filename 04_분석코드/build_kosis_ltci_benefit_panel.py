@@ -7,10 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 
+from project_paths import ANALYSIS_READY_DIR, OUTPUTS_DIR, RAW_DIR
 
-RAW_DIR = Path("data/raw/causal_panel/kosis_ltci_benefit/csv")
-OUTPUT = Path("data/analysis_ready/annual_ltci_benefit_sigungu_2013_2024.csv")
-AUDIT = Path("outputs/data_quality/kosis_ltci_benefit_panel_audit.json")
+SOURCE_DIR = RAW_DIR / "causal_panel" / "kosis_ltci_benefit" / "csv"
+OUTPUT = ANALYSIS_READY_DIR / "annual_ltci_benefit_sigungu_2013_2024.csv"
+AUDIT = OUTPUTS_DIR / "data_quality" / "kosis_ltci_benefit_panel_audit.json"
 
 
 def numeric(series: pd.Series) -> pd.Series:
@@ -19,7 +20,7 @@ def numeric(series: pd.Series) -> pd.Series:
 
 def main() -> None:
     frames: list[pd.DataFrame] = []
-    for path in sorted(RAW_DIR.glob("*.csv")):
+    for path in sorted(SOURCE_DIR.glob("*.csv")):
         raw = pd.read_csv(path, encoding="cp949", skiprows=2, dtype=str)
         raw["is_sigungu"] = raw["시·군·구별"].str.startswith(" ", na=False)
         raw["province"] = raw["시·군·구별"].where(~raw["is_sigungu"]).ffill().str.strip()

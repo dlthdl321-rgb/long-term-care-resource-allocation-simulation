@@ -8,10 +8,11 @@ from pathlib import Path
 
 import pandas as pd
 
+from project_paths import ANALYSIS_READY_DIR, OUTPUTS_DIR, RAW_DIR
 
-RAW_DIR = Path("data/raw/monthly_panel/mois_age_population")
-OUTPUT_DIR = Path("data/analysis_ready")
-AUDIT_DIR = Path("outputs/data_quality")
+SOURCE_DIR = RAW_DIR / "monthly_panel" / "mois_age_population"
+OUTPUT_DIR = ANALYSIS_READY_DIR
+AUDIT_DIR = OUTPUTS_DIR / "data_quality"
 MONTH_RE = re.compile(r"^(\d{4})년(\d{2})월_계_총인구수$")
 CODE_RE = re.compile(r"\((\d{10})\)\s*$")
 
@@ -21,9 +22,9 @@ def number(series: pd.Series) -> pd.Series:
 
 
 def main() -> None:
-    files = sorted(RAW_DIR.glob("mois_age_population_sigungu_*.csv"))
+    files = sorted(SOURCE_DIR.glob("mois_age_population_sigungu_*.csv"))
     if not files:
-        raise FileNotFoundError(f"원본 CSV가 없습니다: {RAW_DIR}")
+        raise FileNotFoundError(f"원본 CSV가 없습니다: {SOURCE_DIR}")
 
     frames: list[pd.DataFrame] = []
     file_audit: list[dict[str, object]] = []

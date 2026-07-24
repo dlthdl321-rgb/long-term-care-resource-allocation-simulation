@@ -296,8 +296,9 @@ def main() -> int:
             "",
             "## 7. 데이터 전처리 Python 코드와 역할",
             "",
-            "원본 전처리는 `scripts/build_all_from_raw.py`, 통계 분석은 "
-            "`scripts/analyze_ltci_resource_allocation.py`가 실행한다. "
+            "원본 전처리는 [build_all_from_raw.py](../04_분석코드/build_all_from_raw.py), "
+            "통계 분석은 [analyze_ltci_resource_allocation.py]"
+            "(../04_분석코드/analyze_ltci_resource_allocation.py)가 실행한다. "
             "아래는 역할별 핵심 코드와 해석이다.",
             "",
             "### 7.1 전체 파일 읽기와 숫자형 변환",
@@ -384,11 +385,11 @@ def main() -> int:
             "",
             "## 9. 재현 파일",
             "",
-            "- 원본 전처리 코드: `scripts/build_all_from_raw.py`",
-            "- 전처리·통계 코드: `scripts/analyze_ltci_resource_allocation.py`",
+            "- 원본 전처리 코드: [`build_all_from_raw.py`](../04_분석코드/build_all_from_raw.py)",
+            "- 전처리·통계 코드: [`analyze_ltci_resource_allocation.py`](../04_분석코드/analyze_ltci_resource_allocation.py)",
             "- 원본-산출물 계보·해시: `outputs/raw_preprocessing/lineage_manifest.json`",
-            "- 분석 전 검사: `scripts/check_preanalysis_readiness.py`",
-            "- 통계 준비 검사: `scripts/check_statistical_readiness.py`",
+            "- 분석 전 검사: [`check_preanalysis_readiness.py`](../04_분석코드/check_preanalysis_readiness.py)",
+            "- 통계 준비 검사: [`check_statistical_readiness.py`](../04_분석코드/check_statistical_readiness.py)",
             "- 통계 설정: `config/statistical_config.json`",
             "- 기술통계: `outputs/analysis/descriptive_statistics.csv`",
             "- 서비스 프로파일: `outputs/statistical_readiness/service_statistical_profiles.csv`",
@@ -400,20 +401,33 @@ def main() -> int:
     )
 
     preprocessing_script = (
-        ROOT / "src" / "build_all_from_raw.py"
+        ROOT.parent / "04_분석코드" / "build_all_from_raw.py"
     ).read_text(encoding="utf-8")
     xlsx_extractor_script = (
-        ROOT / "src" / "extract_xlsx_sheet.py"
+        ROOT.parent / "04_분석코드" / "extract_xlsx_sheet.py"
     ).read_text(encoding="utf-8")
     time_series_script = (
-        ROOT / "src" / "build_core_time_series.py"
+        ROOT.parent / "04_분석코드" / "build_core_time_series.py"
     ).read_text(encoding="utf-8")
     analysis_script = (
-        ROOT / "src" / "analyze_ltci_resource_allocation.py"
+        ROOT.parent / "04_분석코드" / "analyze_ltci_resource_allocation.py"
     ).read_text(encoding="utf-8")
     lines.extend(
         [
-            "## 10. 전처리·기술통계·추론통계 전체 Python 코드",
+            "## 10. 코드 실행 위치",
+            "",
+            "전체 코드의 역할·입력·출력·실행 명령은 "
+            "[분석 코드 목차](../04_분석코드/README.md)에 정리했다.",
+            "",
+            "| 단계 | 실행 파일 | 생성·확인 내용 |",
+            "| --- | --- | --- |",
+            "| 원본 재구축 | [build_all_from_raw.py](../04_분석코드/build_all_from_raw.py) | 원본에서 전처리 파일과 계보표 생성 |",
+            "| 분석 전 검사 | [check_preanalysis_readiness.py](../04_분석코드/check_preanalysis_readiness.py) | 컬럼·중복·총량·완전성·시점 정합성 검사 |",
+            "| 통계 전 검사 | [check_statistical_readiness.py](../04_분석코드/check_statistical_readiness.py) | 분포·표본수·희소성과 검정 가능성 검사 |",
+            "| 통계·시뮬레이션 | [analyze_ltci_resource_allocation.py](../04_분석코드/analyze_ltci_resource_allocation.py) | 지표·통계·배치 시나리오 계산 |",
+            "| 보고서 생성 | [generate_statistical_report.py](../04_분석코드/generate_statistical_report.py) | 결과를 현재 보고서로 변환 |",
+            "",
+            "## 11. 전처리·기술통계·추론통계 전체 Python 코드",
             "",
             "아래 두 코드는 이번 결과를 생성한 실제 실행 파일의 전체 내용이다. "
             "첫 번째 코드가 공개 원본에서 분석용 표를 만들고, 두 번째 코드가 그 표를 "
@@ -422,10 +436,8 @@ def main() -> int:
             "실행 명령:",
             "",
             "```powershell",
-            r".\.venv-analysis\Scripts\python.exe -X utf8 "
-            r"scripts\build_all_from_raw.py",
-            r".\.venv-analysis\Scripts\python.exe -X utf8 "
-            r"scripts\analyze_ltci_resource_allocation.py "
+            r"python ""04_분석코드/build_all_from_raw.py""",
+            r"python ""04_분석코드/analyze_ltci_resource_allocation.py"" "
             r"--stage hypotheses --run-inference",
             "```",
             "",
@@ -435,25 +447,25 @@ def main() -> int:
             "누락·잘못된 지역 결합·집계 총량 변화를 차단하는 서로 다른 검사이므로 "
             "삭제하지 않았다.",
             "",
-            "### 10.1 원본에서 분석용 표를 만드는 전체 코드",
+            "### 11.1 원본에서 분석용 표를 만드는 전체 코드",
             "",
             "```python",
             preprocessing_script.rstrip(),
             "```",
             "",
-            "### 10.2 XLSX 원본 시트 추출 코드",
+            "### 11.2 XLSX 원본 시트 추출 코드",
             "",
             "```python",
             xlsx_extractor_script.rstrip(),
             "```",
             "",
-            "### 10.3 원본 시계열 표 생성 코드",
+            "### 11.3 원본 시계열 표 생성 코드",
             "",
             "```python",
             time_series_script.rstrip(),
             "```",
             "",
-            "### 10.4 분석용 표 검산과 통계 전체 코드",
+            "### 11.4 분석용 표 검산과 통계 전체 코드",
             "",
             "```python",
             analysis_script.rstrip(),

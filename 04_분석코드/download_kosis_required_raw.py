@@ -18,9 +18,10 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
+from project_paths import RAW_DIR
 
 API_URL = "https://kosis.kr/openapi/Param/statisticsParameterData.do"
-OUTPUT_ROOT = Path("data/raw/causal_panel/kosis_openapi")
+OUTPUT_ROOT = RAW_DIR / "causal_panel" / "kosis_openapi"
 
 
 @dataclass(frozen=True)

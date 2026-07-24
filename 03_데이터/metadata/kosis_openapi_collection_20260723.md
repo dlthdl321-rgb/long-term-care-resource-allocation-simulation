@@ -25,7 +25,7 @@
 - 원본: `data/raw/causal_panel/kosis_openapi/{통계표 ID}/{통계표 ID}_{연도}.json`
 - 파일별 출처·행 수·컬럼·용량·체크섬: `data/raw/causal_panel/kosis_openapi/manifest.csv`
 - 전체 수집 결과: `data/raw/causal_panel/kosis_openapi/collection_summary.json`
-- 재수집 코드: `scripts/download_kosis_required_raw.py`
+- 재수집 코드: [`../../04_분석코드/download_kosis_required_raw.py`](../../04_분석코드/download_kosis_required_raw.py)
 
 `DT_35006_N021`과 `DT_35006_N022`는 자원배치 시뮬레이션의 핵심 공급 자료다.
 지역별 입원 자료는 후속 지역 패널 및 결과지표 후보이며, EQ-5D는 2019년까지만

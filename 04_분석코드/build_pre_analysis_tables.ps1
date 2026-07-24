@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = 'Stop'
 
-$root = Split-Path -Parent $PSScriptRoot
+$root = Join-Path (Split-Path -Parent $PSScriptRoot) '03_데이터'
 $data = Join-Path $root 'data'
 $analysis = Join-Path $data 'analysis_ready'
 $processed = Join-Path $data 'processed'

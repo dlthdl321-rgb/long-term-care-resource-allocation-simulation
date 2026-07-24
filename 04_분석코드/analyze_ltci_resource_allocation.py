@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[1] / "03_데이터"
 DATA_DIR = PROJECT_ROOT / "data" / "analysis_ready"
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "outputs" / "analysis"
 

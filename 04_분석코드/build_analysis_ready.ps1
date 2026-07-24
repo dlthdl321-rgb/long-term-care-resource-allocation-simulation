@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = 'Stop'
 
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Join-Path (Split-Path -Parent $PSScriptRoot) '03_데이터'
 $processedDir = Join-Path $projectRoot 'data\processed'
 $analysisDir = Join-Path $projectRoot 'data\analysis_ready'
 New-Item -ItemType Directory -Force -Path $analysisDir | Out-Null

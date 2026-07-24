@@ -5,9 +5,9 @@ from pathlib import Path
 from pypdf import PdfReader
 
 
-ROOT = Path(__file__).resolve().parents[1]
-PDF_DIR = ROOT.parent / "04_선행연구자료"
-OUTPUT = ROOT / "outputs" / "literature_indicator_context.txt"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+PDF_DIR = REPOSITORY_ROOT / "05_선행연구자료"
+OUTPUT = REPOSITORY_ROOT / "03_데이터" / "outputs" / "literature_indicator_context.txt"
 KEYWORDS = (
     "비형평",
     "계산식",

@@ -11,10 +11,11 @@ from pathlib import Path
 
 import pandas as pd
 
+from project_paths import ANALYSIS_READY_DIR, OUTPUTS_DIR
 
-SOURCE = Path("data/analysis_ready/annual_ltci_benefit_sigungu_2013_2024.csv")
-OUTPUT = Path("data/analysis_ready/annual_ltci_service_outcomes_sigungu_2013_2024.csv")
-AUDIT = Path("outputs/data_quality/ltci_service_outcome_panel_audit.json")
+SOURCE = ANALYSIS_READY_DIR / "annual_ltci_benefit_sigungu_2013_2024.csv"
+OUTPUT = ANALYSIS_READY_DIR / "annual_ltci_service_outcomes_sigungu_2013_2024.csv"
+AUDIT = OUTPUTS_DIR / "data_quality" / "ltci_service_outcome_panel_audit.json"
 
 HOME_SERVICES = ["방문요양", "방문목욕", "방문간호", "주야간보호", "단기보호", "복지용구", "통합재가서비스"]
 FACILITY_SERVICES = [

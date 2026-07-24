@@ -14,11 +14,12 @@ import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from project_paths import PROCESSED_DIR, RAW_DIR
 
 BASE = "https://apis.data.go.kr/B551182/MadmDtlInfoService2.8"
-SOURCE = Path("data/processed/hira_nursing_hospitals_20260723.csv")
-RAW = Path("data/raw/hira_nursing_hospital_details_20260723")
-PROCESSED = Path("data/processed/hira_nursing_hospital_details_20260723")
+SOURCE = PROCESSED_DIR / "hira_nursing_hospitals_20260723.csv"
+RAW = RAW_DIR / "hira_nursing_hospital_details_20260723"
+PROCESSED = PROCESSED_DIR / "hira_nursing_hospital_details_20260723"
 ENDPOINTS = {
     "facility": "getEqpInfo2.8",
     "detail": "getDtlInfo2.8",
