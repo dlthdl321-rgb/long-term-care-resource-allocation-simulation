@@ -1,0 +1,2 @@
+﻿region_count,service,resource_type,target_supply_rate,current_resource_total,continuous_gap_total,integer_need_total,target_deficit_regions,provider_missing_regions
+76,visit_nursing,institution,0.4134130418495324,104.0,20.9222619977404,41,38,28
