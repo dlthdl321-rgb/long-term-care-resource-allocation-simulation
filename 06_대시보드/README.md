@@ -2,6 +2,8 @@
 
 도 소속 76개 군의 장기요양 공급격차와 자원배치 전략을 탐색하는 포트폴리오형 대시보드입니다.
 
+[Live Dashboard](https://dlthdl321-rgb.github.io/) · [Case Study](../CASE_STUDY.md) · [분석방법론](../02_분석보고서/01_분석방법론.md)
+
 ## 제공 화면
 
 - 프로젝트 소개와 실데이터 기반 핵심 발견
@@ -10,7 +12,21 @@
 - 과거·미래 변화와 자동배치 민감도
 - 외부공급 기여관계, 보고서와 데이터 품질
 
-“기관 미확인”은 공개자료에서 기관이 확인되지 않았다는 뜻이며 실제 기관 부재를 확정하지 않습니다. 목표와 접근성 가중치는 정책 확정값이 아닌 탐색 입력입니다.
+“기관 미관측”은 공개자료에서 기관이 확인되지 않았다는 뜻이며 실제 기관 부재를 확정하지 않습니다. 탐색기준과 접근성 가중치는 정책 확정값이 아닌 탐색 입력입니다.
+
+## 코드 구조
+
+- static-index.html → 브라우저가 처음 읽는 HTML
+- static-main.tsx → React 진입점
+- app/page.tsx → 화면 전환과 공유 상태. 지역비교·진단·현장검토·자원변경·Timeline·자동배치·외부공급·보고서 화면이 각각 `view === "..."` 블록으로 구분됨
+- views/Overview.tsx → 첫 화면 Hero
+- components/ → 여러 화면에서 재사용하는 UI
+- lib/data.ts → JSON 로딩과 CSV 저장
+- lib/format.ts → 숫자와 자원 단위 formatting
+- lib/allocation.ts → 자동 자원배치 계산
+- lib/timeline.ts → 연도별 수요·자원 시나리오 계산
+- types.ts → 공통 데이터 타입
+- public/data/ → 분석 코드가 생성하고 Dashboard가 읽는 공개 JSON
 
 ## 실행
 
@@ -21,22 +37,28 @@ npm install
 npm run dev
 ```
 
+개발 서버는 Vite가 static-index.html → static-main.tsx 경로를 실행합니다.
+
 ## 검증과 빌드
 
 ```bash
-npm test
-npm run lint
-npm run build:public
+npm run check
+npm run build
+npm run preview
 ```
 
-- `npm test`: 배포 빌드와 서버 렌더링·데이터 완전성 검사
-- `npm run lint`: TypeScript/React 정적 검사
-- `npm run build:public`: GitHub Pages 등에 올릴 수 있는 정적 빌드
+- `npm run check`: lint 후 정적 빌드·데이터·공개 문구 회귀검사
+- `npm run build`: dist-public/에 GitHub Pages용 정적 산출물 생성
+- `npm run preview`: 빌드 결과를 로컬에서 확인
 
 ## 데이터 갱신
 
 대시보드의 `public/data/*.json`은 저장소 분석 산출물에서 생성됩니다. 원본·중간·결과 파일의 계보는 상위 경로의 [`03_데이터/README.md`](../03_데이터/README.md), 분석 재현은 [`04_분석코드/README.md`](../04_분석코드/README.md)를 참고하세요.
 
+```bash
+python scripts/prepare_dashboard_data.py
+```
+
 ## 배포
 
-연결된 Sites 프로젝트 설정은 `.openai/hosting.json`에 있습니다. 배포 URL은 상위 [`README.md`](../README.md)에 기록합니다.
+GitHub Pages는 `npm run build`가 생성한 dist-public/을 배포합니다. 배포 URL은 상위 [`README.md`](../README.md)에 기록합니다.

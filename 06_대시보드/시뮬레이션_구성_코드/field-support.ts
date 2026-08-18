@@ -7,7 +7,7 @@ export const FIELD_SCENARIOS = [
   { label: "기관 1곳 신설", delta: 1, resource: "기관", note: "설치·인력 확보 가능성 별도 확인" },
   { label: "기관 1곳 폐업", delta: -1, resource: "기관", note: "공급공백과 간접 악화 점검" },
   { label: "제공인력 3명 확충", delta: 3, resource: "핵심인력", note: "기관 존재 여부를 먼저 확인" },
-  { label: "제공인력 3명 유출", delta: -3, resource: "핵심인력", note: "목표미달 전환 위험 점검" },
+  { label: "제공인력 3명 유출", delta: -3, resource: "핵심인력", note: "탐색기준 미만 전환 위험 점검" },
   { label: "정원 10명 확충", delta: 10, resource: "정원", service: "주야간보호", note: "주야간보호기관 존재 필요" },
 ];
 
@@ -32,17 +32,17 @@ export function targetTiers(rows: DataRow[], selected: DataRow | undefined) {
     .map((row) => n(row.current_supply_level));
   return [
     {
-      name: "최소기반",
+      name: "하위 25% 경계",
       value: quantile(levels, 0.25),
       meaning: "76개 군 하위 25% 경계",
     },
     {
-      name: "기본목표",
+      name: "중앙값 탐색기준",
       value: quantile(levels, 0.5),
       meaning: "76개 군 중앙값",
     },
     {
-      name: "상향목표",
+      name: "상위 25% 참고선",
       value: quantile(levels, 0.75),
       meaning: "76개 군 상위 25% 경계",
     },
@@ -68,7 +68,7 @@ export function fieldSummary(
       : accessRelief > 0
         ? "같은 도의 계산상 외부공급을 반영하면 부족이 일부 완화되지만 실제 이용 가능성은 확인이 필요합니다."
         : "외부공급을 반영해도 뚜렷한 완충이 확인되지 않아 지역 내부 공급기반 검토가 우선입니다.",
-    `현장검토 순위는 76개 군 중 ${region.urgency_rank}위이며, 이는 지원 확정순위가 아니라 확인을 시작할 비교 순서입니다.`,
+    `현장검토 후보 순서는 76개 군 중 ${region.urgency_rank}번째이며, 이는 지원 확정순위가 아니라 확인을 시작할 탐색용 순서입니다.`,
   ];
 }
 
@@ -109,7 +109,7 @@ export function actionGuidance(
   }
   if (!items.length) {
     items.push({
-      signal: "기본목표 충족",
+      signal: "중앙값 탐색기준 이상",
       action: "즉시 확충보다 공급 유지와 정기 모니터링을 우선 검토",
       tone: "good",
     });
@@ -159,6 +159,6 @@ export function comparePreset(
     gapAfter,
     gapChange: gapAfter - gapBefore,
     shortageAfter,
-    stateAfter: gapAfter <= 1e-9 ? "목표충족" : "목표미달",
+    stateAfter: gapAfter <= 1e-9 ? "탐색기준 이상" : "탐색기준 미만",
   };
 }

@@ -1,31 +1,34 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import eslint from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
+export default tseslint.config(
+  { ignores: ["dist-public/**", "node_modules/**"] },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
   {
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+    plugins: { "react-hooks": reactHooks },
     rules: {
-      // The dashboard intentionally derives the selected row after province
-      // filtering and uses memoized simulation calculations over loaded JSON.
+      ...reactHooks.configs.flat.recommended.rules,
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/preserve-manual-memoization": "off",
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    ".vinext/**",
-    ".wrangler/**",
-    "dist/**",
-    "dist-public/**",
-    "node_modules/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
-
-export default eslintConfig;
+  {
+    files: ["tests/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        URL: "readonly",
+        Response: "readonly",
+      },
+    },
+  },
+);

@@ -1,5 +1,3 @@
-@import "tailwindcss";
-
 :root {
   --ink: #18201d;
   --muted: #68736e;
@@ -175,7 +173,7 @@ p {
 h1 {
   margin-bottom: 0;
   font-family: Georgia, "Noto Serif KR", serif;
-  font-size: clamp(30px, 4vw, 48px);
+  font-size: clamp(28px, 2.4vw, 38px);
   font-weight: 500;
   letter-spacing: -0.045em;
 }
@@ -191,7 +189,7 @@ h2 {
   display: grid;
   gap: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 select,
@@ -261,13 +259,17 @@ select {
 
 .portfolio-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(290px, 0.75fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 34px;
   margin-top: 24px;
-  padding: clamp(28px, 5vw, 58px);
+  padding: clamp(28px, 3.5vw, 48px);
   border-radius: 22px;
   background: var(--moss-dark);
   color: #fff;
+}
+
+.hero-copy {
+  max-width: 960px;
 }
 
 .hero-label,
@@ -282,8 +284,11 @@ select {
 .portfolio-hero h2 {
   margin-top: 10px;
   font-family: Georgia, "Noto Serif KR", serif;
-  font-size: clamp(42px, 6vw, 72px);
+  max-width: 940px;
+  font-size: clamp(32px, 3.3vw, 52px);
   font-weight: 500;
+  line-height: 1.17;
+  letter-spacing: -0.03em;
 }
 
 .hero-copy > strong {
@@ -295,7 +300,7 @@ select {
 }
 
 .hero-copy > p:not(.hero-label) {
-  max-width: 720px;
+  max-width: 900px;
   margin: 18px 0 0;
   color: #c9d8d0;
   line-height: 1.75;
@@ -315,7 +320,7 @@ select {
   border-radius: 999px;
   background: transparent;
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   text-decoration: none;
   cursor: pointer;
 }
@@ -325,30 +330,6 @@ select {
   border-color: var(--lime);
   background: var(--lime);
   color: var(--moss-dark);
-}
-
-.hero-facts {
-  display: grid;
-  align-content: center;
-  gap: 0;
-  margin: 0;
-  border-top: 1px solid rgb(255 255 255 / 20%);
-}
-
-.hero-facts div {
-  padding: 18px 0;
-  border-bottom: 1px solid rgb(255 255 255 / 20%);
-}
-
-.hero-facts dt {
-  color: #9fb7aa;
-  font-size: 10px;
-}
-
-.hero-facts dd {
-  margin: 6px 0 0;
-  font-size: 14px;
-  line-height: 1.45;
 }
 
 .finding-section,
@@ -623,54 +604,6 @@ select {
   font-size: 12px;
 }
 
-.rank-list {
-  display: grid;
-}
-
-.rank-list button {
-  display: grid;
-  grid-template-columns: 28px minmax(115px, 1fr) minmax(90px, 1.4fr) 42px;
-  gap: 12px;
-  align-items: center;
-  padding: 11px 4px;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid #edf0ed;
-  text-align: left;
-  cursor: pointer;
-}
-
-.rank-list button:hover {
-  background: #f7f9f5;
-}
-
-.rank-list b {
-  color: var(--moss);
-  font-family: Georgia, serif;
-  font-size: 12px;
-}
-
-.rank-list span strong,
-.rank-list span small {
-  display: block;
-}
-
-.rank-list span strong {
-  font-size: 13px;
-}
-
-.rank-list span small {
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.rank-list em {
-  font-style: normal;
-  font-size: 12px;
-  text-align: right;
-}
-
 .bar-track {
   display: block;
   width: 100%;
@@ -695,14 +628,12 @@ select {
   background: var(--cool);
 }
 
-.metric-bars,
-.scenario-chart {
+.metric-bars {
   display: grid;
   gap: 15px;
 }
 
-.metric-bars > div,
-.scenario-chart > div {
+.metric-bars > div {
   display: grid;
   grid-template-columns: 118px 1fr 52px;
   gap: 12px;
@@ -714,8 +645,7 @@ select {
   display: block;
 }
 
-.metric-bars span b,
-.scenario-chart span {
+.metric-bars span b {
   font-size: 12px;
 }
 
@@ -725,54 +655,9 @@ select {
   font-size: 10px;
 }
 
-.metric-bars > div > strong,
-.scenario-chart b {
+.metric-bars > div > strong {
   font-size: 12px;
   text-align: right;
-}
-
-.insight-band {
-  margin-top: 18px;
-  padding: 23px 26px;
-  display: grid;
-  grid-template-columns: 170px 1fr auto;
-  gap: 28px;
-  align-items: center;
-  background: var(--moss);
-  border-radius: 10px;
-  color: #fff;
-}
-
-.insight-band span,
-.insight-band strong {
-  display: block;
-}
-
-.insight-band span {
-  color: #bad0c4;
-  font-size: 10px;
-}
-
-.insight-band strong {
-  margin-top: 5px;
-  font-family: Georgia, serif;
-  font-size: 23px;
-  font-weight: 500;
-}
-
-.insight-band p {
-  margin-bottom: 0;
-  color: #d4e0da;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.insight-band button {
-  border: 0;
-  background: transparent;
-  color: var(--lime);
-  cursor: pointer;
-  font-size: 12px;
 }
 
 .table-wrap {
@@ -1241,76 +1126,8 @@ td small {
   color: var(--moss);
 }
 
-.impact-panel,
 .contribution-panel {
   margin-top: 18px;
-}
-
-.impact-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 18px 0;
-}
-
-.impact-summary article {
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--paper);
-}
-
-.impact-summary span,
-.impact-summary small {
-  display: block;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.impact-summary strong {
-  display: block;
-  margin: 6px 0 3px;
-  font-family: Georgia, serif;
-  font-size: 27px;
-}
-
-.impact-summary .improved {
-  border-left: 4px solid var(--moss);
-}
-
-.impact-summary .worsened {
-  border-left: 4px solid var(--warm);
-}
-
-.impact-columns {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.impact-columns > div {
-  padding: 15px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-}
-
-.impact-columns h3 {
-  margin: 0 0 9px;
-  font-size: 13px;
-}
-
-.impact-columns p {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
-  margin: 0;
-  padding: 8px 0;
-  border-top: 1px solid #edf0ed;
-  font-size: 11px;
-}
-
-.impact-columns p span {
-  color: var(--muted);
 }
 
 .empty-copy {
@@ -2368,6 +2185,61 @@ td small {
   background: var(--moss);
 }
 
+/* 사용자 판단에 필요한 설명과 조작 레이블은 100% 배율에서도 12px 이상을 유지한다. */
+.section-head small,
+.metric-bars span small,
+.control-panel > p,
+.warning,
+.scenario-title p,
+.before-after span,
+.before-after small,
+.interpretation,
+.footnote,
+.target-definition p,
+.target-explainer p,
+.demand-forecast-note p,
+.control-help,
+.diagnosis-hero p,
+.report-toolbar p,
+.diagnosis-kpis span,
+.diagnosis-kpis small,
+.history-cards span,
+.history-cards small,
+.history-ribbon span,
+.history-ribbon small,
+.observed-history p,
+.allocation-controls > p,
+.allocation-results header span,
+.allocation-results header small,
+.allocation-results p,
+.allocation-results em,
+.quality-grid small,
+.quality-grid em,
+.report-facts span,
+.stability-list article > strong,
+.stability-list article > div,
+.access-ranking span small {
+  font-size: 12px;
+}
+
+.control-panel label,
+.allocation-controls label,
+.checklist-grid label,
+.diagnosis-actions button,
+.report-toolbar button,
+.text-action {
+  font-size: 13px;
+}
+
+button,
+select {
+  font-size: 13px;
+}
+
+th {
+  font-size: 12px;
+}
+
 @media (max-width: 980px) {
   .portfolio-hero,
   .about-section {
@@ -2561,8 +2433,6 @@ td small {
 
   .diagnosis-kpis,
   .history-cards,
-  .impact-summary,
-  .impact-columns,
   .allocation-results,
   .quality-grid,
   .report-facts {
@@ -2647,11 +2517,6 @@ td small {
     font-size: 27px;
   }
 
-  .insight-band {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
   .section-head {
     display: block;
   }
@@ -2660,14 +2525,6 @@ td small {
     display: block;
     margin-top: 8px;
     text-align: left;
-  }
-
-  .rank-list button {
-    grid-template-columns: 24px 1fr 35px;
-  }
-
-  .rank-list .bar-track {
-    display: none;
   }
 
   .before-after {
@@ -2682,6 +2539,19 @@ td small {
   .comparison-list > div {
     grid-template-columns: 1fr auto auto auto;
   }
+}
+
+.hero-badges { display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0; }
+.hero-badges span { padding:.38rem .7rem; border:1px solid var(--line); border-radius:999px; font-size:.78rem; }
+.strategy-example-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; margin:1rem 0; }
+.strategy-example-grid p { display:flex; flex-direction:column; gap:.25rem; margin:0; padding:.8rem; border:1px solid var(--line); border-radius:.75rem; }
+.strategy-example-grid small, .strategy-example-grid span { font-size:.78rem; }
+.region-sort-control { width:max-content; margin:0 0 1rem auto; }
+.access-caution strong { display:inline-block; padding:.3rem .65rem; border-radius:999px; background:var(--accent-soft); }
+
+@media (max-width: 720px) {
+  .strategy-example-grid { grid-template-columns:1fr; }
+  .hero-badges { margin:.75rem 0; }
 }
 
 @media print {

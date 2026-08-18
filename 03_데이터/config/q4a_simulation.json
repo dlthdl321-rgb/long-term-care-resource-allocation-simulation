@@ -1,0 +1,18 @@
+{
+  "region_scope": "provincial_counties_76",
+  "service": "visit_nursing",
+  "service_codes": ["B05", "C05"],
+  "resource_type": "institution",
+  "demand_scenario": "ltci_midpoint",
+  "target_scenario": "county_median",
+  "resource_budget": 5,
+  "allocation_cap": 2,
+  "vulnerability_weights": {
+    "aging_rate": 0.5,
+    "elderly_single_household_index": 0.5
+  },
+  "lower_tail_fraction": 0.1,
+  "lower_tail_rounding": "ceil",
+  "random_seed": null,
+  "interpretation": "계산상 공급지표 변화이며 실제 정책 시행의 인과효과가 아님"
+}

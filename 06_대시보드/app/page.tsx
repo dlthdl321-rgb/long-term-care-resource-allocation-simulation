@@ -1,6 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { InsightCallout } from "../components/InsightCallout";
+import { MetricBar as Bar } from "../components/MetricBar";
+import { TimelineChart } from "../components/TimelineChart";
+import { calculateAllocations } from "../lib/allocation";
+import {
+  DASHBOARD_DATASETS,
+  downloadCsv,
+  loadDashboardJson,
+} from "../lib/data";
+import { fmt, formatResourceAmount, num, pct, resourceUnit } from "../lib/format";
+import { buildTimelineScenario } from "../lib/timeline";
+import type {
+  BaselineRow,
+  DashboardRow as Row,
+  QualityRow,
+  RegionRow,
+  TimelinePoint,
+} from "../types";
+import { OverviewHero } from "../views/Overview";
 import {
   actionGuidance,
   comparePreset,
@@ -10,7 +29,6 @@ import {
   targetTiers,
 } from "../시뮬레이션_구성_코드/field-support";
 
-type Row = Record<string, string>;
 const EMPTY_ROWS: Row[] = [];
 const DEMO = {
   regionCode: "48890",
@@ -32,7 +50,7 @@ type View =
 
 const GITHUB_URL =
   "https://github.com/dlthdl321-rgb/long-term-care-resource-allocation-simulation";
-const CASE_STUDY_URL = `${GITHUB_URL}/blob/main/PORTFOLIO_CASE_STUDY.md`;
+const CASE_STUDY_URL = `${GITHUB_URL}/blob/main/CASE_STUDY.md`;
 
 const VIEW_GUIDES: Record<
   View,
@@ -45,7 +63,7 @@ const VIEW_GUIDES: Record<
     terms: [
       ["기관 미확인", "자료에서 해당 서비스 기관이 확인되지 않은 경우"],
       ["탐색기준 미만", "현재 공급이 군 분포의 중앙값 기준에 못 미치는 경우"],
-      ["검토 우선순위", "현장 확인을 어디부터 시작할지 돕는 비교 순서"],
+      ["탐색용 검토 순서", "현장 확인을 어디부터 시작할지 돕는 비교 순서"],
     ],
   },
   regions: {
@@ -55,7 +73,7 @@ const VIEW_GUIDES: Record<
     terms: [
       ["돌봄수요 부담", "장기요양 인정자 규모와 증가 흐름을 합친 비교점수"],
       ["공급격차 점수", "기관·서비스 제공인력·정원이 탐색기준보다 낮은 정도"],
-      ["우선순위", "자원 배분 확정 순위가 아닌 현장검토 시작 순서"],
+      ["탐색용 순서", "자원 배분 확정 순위가 아닌 현장검토 시작 순서"],
     ],
   },
   diagnosis: {
@@ -130,10 +148,6 @@ const VIEW_GUIDES: Record<
   },
 };
 
-const num = (value: string | undefined) => Number(value || 0);
-const fmt = (value: number, digits = 1) =>
-  new Intl.NumberFormat("ko-KR", { maximumFractionDigits: digits }).format(value);
-const pct = (value: number) => `${fmt(value * 100, 1)}%`;
 const resourceLabel = (value: string) =>
   value === "핵심인력" ? "서비스 제공인력" : value;
 const VULNERABILITY_COMPONENTS = [
@@ -179,200 +193,12 @@ const VULNERABILITY_COMPONENTS = [
   },
 ] as const;
 
-function downloadCsv(rows: Row[], filename: string) {
-  if (!rows.length) return;
-  const columns = Array.from(
-    new Set(rows.flatMap((row) => Object.keys(row))),
-  );
-  const escape = (value: string | undefined) =>
-    `"${String(value ?? "").replaceAll('"', '""')}"`;
-  const body = [
-    columns.map(escape).join(","),
-    ...rows.map((row) => columns.map((column) => escape(row[column])).join(",")),
-  ].join("\r\n");
-  const blob = new Blob(["\ufeff", body], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-async function loadJson(name: string): Promise<Row[]> {
-  const response = await fetch(`/data/${name}.json`);
-  if (!response.ok) throw new Error(`${name} 데이터를 읽지 못했습니다.`);
-  return response.json();
-}
-
-function Bar({
-  value,
-  max,
-  tone = "primary",
-}: {
-  value: number;
-  max: number;
-  tone?: "primary" | "warm" | "cool";
-}) {
-  return (
-    <span className="bar-track" aria-label={`${fmt(value)} / ${fmt(max)}`}>
-      <span
-        className={`bar-fill ${tone}`}
-        style={{ width: `${Math.max(2, Math.min(100, (value / max) * 100))}%` }}
-      />
-    </span>
-  );
-}
-
-function InsightCallout({
-  label = "한눈에 보는 결론",
-  title,
-  detail,
-}: {
-  label?: string;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <div className="insight-callout">
-      <span>{label}</span>
-      <div>
-        <strong>{title}</strong>
-        <p>{detail}</p>
-      </div>
-    </div>
-  );
-}
-
-type TimelinePoint = {
-  year: number;
-  demand: number;
-  demandGrowthRate: number;
-  baselineResource: number;
-  scenarioResource: number;
-  baselineGap: number;
-  scenarioGap: number;
-  baselineShortage: number;
-  scenarioShortage: number;
-};
-
-function TimelineChart({
-  points,
-  baselineKey,
-  scenarioKey,
-  title,
-  baselineLabel,
-  scenarioLabel,
-  unit,
-  takeaway,
-}: {
-  points: TimelinePoint[];
-  baselineKey:
-    | "baselineResource"
-    | "baselineGap"
-    | "baselineShortage";
-  scenarioKey:
-    | "scenarioResource"
-    | "scenarioGap"
-    | "scenarioShortage";
-  title: string;
-  baselineLabel: string;
-  scenarioLabel: string;
-  unit: string;
-  takeaway: string;
-}) {
-  const width = 760;
-  const height = 280;
-  const pad = { left: 52, right: 20, top: 24, bottom: 36 };
-  const maxValue = Math.max(
-    ...points.flatMap((p) => [p[baselineKey], p[scenarioKey]]),
-    1,
-  );
-  const x = (index: number) =>
-    pad.left +
-    (index / Math.max(points.length - 1, 1)) *
-      (width - pad.left - pad.right);
-  const y = (value: number) =>
-    pad.top +
-    (1 - value / maxValue) * (height - pad.top - pad.bottom);
-  const line = (
-    key:
-      | "baselineResource"
-      | "scenarioResource"
-      | "baselineGap"
-      | "scenarioGap"
-      | "baselineShortage"
-      | "scenarioShortage",
-  ) =>
-    points.map((p, i) => `${i ? "L" : "M"} ${x(i)} ${y(p[key])}`).join(" ");
-  const last = points[points.length - 1];
-
-  return (
-    <div className="timeline-chart">
-      <h3>{title}</h3>
-      <p className="chart-takeaway">{takeaway}</p>
-      <div className="chart-end-values">
-        <span>
-          변경 없음 <b>{fmt(last?.[baselineKey] || 0, 1)}{unit}</b>
-        </span>
-        <span>
-          변경 후 <b>{fmt(last?.[scenarioKey] || 0, 1)}{unit}</b>
-        </span>
-      </div>
-      <div className="chart-legend">
-        <span>
-          <i className="legend-line baseline" />
-          {baselineLabel}
-        </span>
-        <span>
-          <i className="legend-line scenario" />
-          {scenarioLabel}
-        </span>
-      </div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label={title}
-      >
-        {[0, 0.5, 1].map((ratio) => {
-          const value = maxValue * ratio;
-          return (
-            <g key={ratio}>
-              <line
-                x1={pad.left}
-                x2={width - pad.right}
-                y1={y(value)}
-                y2={y(value)}
-                className="grid-line"
-              />
-              <text x={pad.left - 9} y={y(value) + 4} textAnchor="end">
-                {fmt(value, 0)}
-              </text>
-            </g>
-          );
-        })}
-        <path d={line(baselineKey)} className="forecast-line baseline" />
-        <path d={line(scenarioKey)} className="forecast-line scenario" />
-        {points.map((point, index) => (
-          <text
-            key={point.year}
-            x={x(index)}
-            y={height - 12}
-            textAnchor="middle"
-          >
-            {point.year}
-          </text>
-        ))}
-      </svg>
-    </div>
-  );
-}
-
 export default function Home() {
   const [view, setView] = useState<View>("overview");
   const [data, setData] = useState<Record<string, Row[]>>({});
   const [error, setError] = useState("");
   const [province, setProvince] = useState("전체");
+  const [regionSort, setRegionSort] = useState("urgency");
   const [service, setService] = useState("방문간호");
   const [resource, setResource] = useState("기관");
   const [selectedRegion, setSelectedRegion] = useState("48890");
@@ -389,33 +215,16 @@ export default function Home() {
 
   useEffect(() => {
     Promise.all(
-      [
-        "baseline",
-        "regions",
-        "metrics",
-        "scenarios",
-        "stability",
-        "access-regions",
-        "access-metrics",
-        "access-impact",
-        "supply-trends",
-        "workforce",
-        "history",
-        "allocation-strategies",
-        "allocation-detail",
-        "access-contributions",
-        "quality",
-        "portfolio-summary",
-      ].map(async (name) => [name, await loadJson(name)] as const),
+      DASHBOARD_DATASETS.map(
+        async (name) => [name, await loadDashboardJson(name)] as const,
+      ),
     )
       .then((entries) => setData(Object.fromEntries(entries)))
       .catch((reason) => setError(String(reason)));
   }, []);
 
-  const regions = data.regions ?? EMPTY_ROWS;
-  const baseline = data.baseline ?? EMPTY_ROWS;
-  const metrics = data.metrics ?? EMPTY_ROWS;
-  const scenarios = data.scenarios ?? EMPTY_ROWS;
+  const regions = (data.regions ?? EMPTY_ROWS) as RegionRow[];
+  const baseline = (data.baseline ?? EMPTY_ROWS) as BaselineRow[];
   const stability = data.stability ?? EMPTY_ROWS;
   const accessRegions = data["access-regions"] ?? EMPTY_ROWS;
   const accessMetrics = data["access-metrics"] ?? EMPTY_ROWS;
@@ -426,7 +235,7 @@ export default function Home() {
   const allocationStrategies = data["allocation-strategies"] ?? EMPTY_ROWS;
   const allocationDetail = data["allocation-detail"] ?? EMPTY_ROWS;
   const accessContributions = data["access-contributions"] ?? EMPTY_ROWS;
-  const quality = data.quality ?? EMPTY_ROWS;
+  const quality = (data.quality ?? EMPTY_ROWS) as QualityRow[];
   const portfolioSummary = data["portfolio-summary"]?.[0];
   const provinces = useMemo(
     () => ["전체", ...Array.from(new Set(regions.map((r) => r.sido_name))).sort()],
@@ -448,10 +257,21 @@ export default function Home() {
   const topUrgency = [...visibleRegions]
     .sort((a, b) => num(a.urgency_rank) - num(b.urgency_rank))
     .slice(0, 10);
-  const maxUrgency = Math.max(...topUrgency.map((r) => num(r.urgency_score)), 1);
-  const missingProviders = baseline.filter(
-    (r) => r.resource_type === "기관" && r.provider_missing === "True",
-  ).length;
+  const regionSortKeys: Record<string, string> = {
+    urgency: "urgency_score", shortage: "supply_shortage_score",
+    demand: "demand_pressure_score", vulnerability: "vulnerability_percentile",
+  };
+  const sortedRegions = [...visibleRegions].sort(
+    (a, b) => num(b[regionSortKeys[regionSort]]) - num(a[regionSortKeys[regionSort]]),
+  );
+  const regionSortMax = Math.max(
+    ...visibleRegions.map((row) => num(row[regionSortKeys[regionSort]])),
+    1,
+  );
+  const providerMissingCount = (serviceName: string) =>
+    baseline.filter(
+      (row) => row.service === serviceName && row.resource_type === "기관" && row.provider_missing === "True",
+    ).length;
   const relievedRegions = accessRegions.filter(
     (r) => num(r.total_access_relief) > 0,
   ).length;
@@ -462,6 +282,13 @@ export default function Home() {
     setDelta(DEMO.delta);
     setView("simulator");
     window.history.replaceState(null, "", "#demo");
+  };
+  const startAllocationComparison = () => {
+    setService("방문간호");
+    setResource("기관");
+    setAllocationBudget(5);
+    setView("sensitivity");
+    window.history.replaceState(null, "", "#allocation");
   };
 
   const selected = baseline.find(
@@ -570,85 +397,21 @@ export default function Home() {
     "현재 자원값과 자료 기준일을 확인했다",
     "기관과 서비스 제공인력을 구분해 확인했다",
     "외부공급은 실제 이동 가능성이 아닌 계산 가정임을 확인했다",
-    "목표기준을 바꿨을 때 결과가 달라지는지 확인했다",
+    "탐색기준을 바꿨을 때 결과가 달라지는지 확인했다",
     "개선지역과 악화지역을 모두 확인했다",
     "계산 부족량을 공식 필요량으로 표현하지 않았다",
     "최종 결정 전 담당부서 검토가 필요함을 기록했다",
   ];
 
-  const automaticAllocations = useMemo(() => {
-    const strategies = [
-      "수요규모 우선",
-      "공급부족량 우선",
-      ...(resource === "기관" ? ["기관 미확인 우선"] : []),
-      "지역취약성 우선",
-      "검토 우선순위 우선",
-    ];
-    const candidates = baseline.filter((row) => {
-      if (
-        row.service !== service ||
-        row.resource_type !== resource ||
-        num(row.integer_need) <= 0
-      )
-        return false;
-      if (!visibleRegions.some((region) => region.region_code === row.region_code))
-        return false;
-      if (
-        resource !== "기관" &&
-        num(
-          baseline.find(
-            (providerRow) =>
-              providerRow.region_code === row.region_code &&
-              providerRow.service === service &&
-              providerRow.resource_type === "기관",
-          )?.current_resource,
-        ) <= 0
-      )
-        return false;
-      return true;
-    });
-    const regionFor = (code: string) =>
-      regions.find((row) => row.region_code === code);
-    const score = (strategy: string, row: Row) => {
-      const region = regionFor(row.region_code);
-      if (strategy === "수요규모 우선") return num(row.demand_value);
-      if (strategy === "공급부족량 우선") return num(row.integer_need);
-      if (strategy === "기관 미확인 우선")
-        return row.provider_missing === "True" ? 1 : 0;
-      if (strategy === "지역취약성 우선")
-        return num(region?.vulnerability_percentile);
-      return 1000 - num(region?.urgency_rank);
-    };
-    return strategies.map((strategy) => {
-      let remaining = allocationBudget;
-      const items: { row: Row; allocated: number }[] = [];
-      [...candidates]
-        .sort((a, b) => score(strategy, b) - score(strategy, a))
-        .forEach((row) => {
-          if (remaining <= 0) return;
-          const allocated = Math.min(
-            remaining,
-            allocationCap,
-            Math.ceil(num(row.integer_need)),
-          );
-          if (allocated > 0) {
-            items.push({ row, allocated });
-            remaining -= allocated;
-          }
-        });
-      return {
-        strategy,
-        items,
-        allocated: allocationBudget - remaining,
-        remaining,
-        improvedRegions: items.length,
-        gapReduction: items.reduce(
-          (sum, item) => sum + Math.min(item.allocated, num(item.row.continuous_gap)),
-          0,
-        ),
-      };
-    });
-  }, [
+  const automaticAllocations = useMemo(() => calculateAllocations({
+    budget: allocationBudget,
+    capPerRegion: allocationCap,
+    baselineRows: baseline,
+    regionRows: regions,
+    visibleRegionRows: visibleRegions,
+    service,
+    resourceType: resource,
+  }), [
     allocationBudget,
     allocationCap,
     baseline,
@@ -664,55 +427,15 @@ export default function Home() {
         100
       : 0;
   const observedSupplyAnnual = num(selectedTrend?.annual_supply_growth) * 100;
-  const timeline = useMemo<TimelinePoint[]>(() => {
-    if (!selected) return [];
-    let projectedDemand = num(selected.demand_value);
-    return Array.from({ length: horizon + 1 }, (_, t) => {
-      const demandGrowthRate =
-        t === 0 ? 0 : demandGrowth + demandAcceleration * (t - 1);
-      if (t > 0) projectedDemand *= 1 + demandGrowthRate / 100;
-      const demand = projectedDemand;
-      const baselineResource =
-        num(selected.current_resource) * Math.pow(1 + supplyGrowth / 100, t);
-      const scenarioResource = Math.max(
-        0,
-        baselineResource + timelineDelta + annualAddition * t,
-      );
-      const targetResource =
-        (num(selected.target_supply_level) * demand) / 1000;
-      const baselineGap = Math.max(0, targetResource - baselineResource);
-      const scenarioGap = Math.max(0, targetResource - scenarioResource);
-      const baselineSupplyLevel = (baselineResource / demand) * 1000;
-      const scenarioSupplyLevel = (scenarioResource / demand) * 1000;
-      const baselineShortage =
-        num(selected.target_supply_level) > 0
-          ? 1 -
-            Math.min(
-              1,
-              baselineSupplyLevel / num(selected.target_supply_level),
-            )
-          : 0;
-      const scenarioShortage =
-        num(selected.target_supply_level) > 0
-          ? 1 -
-            Math.min(
-              1,
-              scenarioSupplyLevel / num(selected.target_supply_level),
-            )
-          : 0;
-      return {
-        year: 2026 + t,
-        demand,
-        demandGrowthRate,
-        baselineResource,
-        scenarioResource,
-        baselineGap,
-        scenarioGap,
-        baselineShortage,
-        scenarioShortage,
-      };
-    });
-  }, [
+  const timeline = useMemo<TimelinePoint[]>(() => buildTimelineScenario({
+    baseline: selected,
+    horizon,
+    demandGrowth,
+    demandAcceleration,
+    supplyGrowth,
+    initialResourceChange: timelineDelta,
+    annualResourceChange: annualAddition,
+  }), [
     selected,
     horizon,
     demandGrowth,
@@ -732,88 +455,6 @@ export default function Home() {
   const finalShortageImprovement =
     (finalTimeline?.baselineShortage || 0) -
     (finalTimeline?.scenarioShortage || 0);
-
-  const scenarioRegionalImpact = useMemo(() => {
-    if (!selected || !selectedRegionName) return [];
-    const sourceSurplusBefore = Math.max(
-      0,
-      num(selected.current_resource) - num(selected.target_resource),
-    );
-    const sourceSurplusAfter = Math.max(
-      0,
-      afterResource - num(selected.target_resource),
-    );
-    const externalWeight = service === "주야간보호" ? 0.05 : 0.15;
-    return baseline
-      .filter(
-        (row) => row.service === service && row.resource_type === resource,
-      )
-      .map((row) => {
-        const region = regions.find(
-          (item) => item.region_code === row.region_code,
-        );
-        const effective = impact.find(
-          (item) =>
-            item.region_code === row.region_code &&
-            item.service === service &&
-            item.resource_type === resource,
-        );
-        const effectiveBefore = effective
-          ? num(effective.effective_resource_before)
-          : num(row.current_resource);
-        let effectiveChange = 0;
-        let scope = "영향 없음";
-        if (row.region_code === selectedRegion) {
-          effectiveChange = afterResource - num(selected.current_resource);
-          scope = "직접";
-        } else if (region?.sido_name === selectedRegionName.sido_name) {
-          effectiveChange =
-            (sourceSurplusAfter - sourceSurplusBefore) * externalWeight;
-          scope = "간접";
-        }
-        const gapBefore = Math.max(
-          0,
-          num(row.target_resource) - effectiveBefore,
-        );
-        const gapAfter = Math.max(
-          0,
-          num(row.target_resource) - (effectiveBefore + effectiveChange),
-        );
-        const gapChange = gapAfter - gapBefore;
-        return {
-          region_code: row.region_code,
-          sido_name: region?.sido_name || "",
-          sigungu_name: region?.sigungu_name || row.region_code,
-          scope,
-          gap_before: String(gapBefore),
-          gap_after: String(gapAfter),
-          gap_change: String(gapChange),
-          direction:
-            gapChange < -1e-9
-              ? "개선"
-              : gapChange > 1e-9
-                ? "악화"
-                : "변화 없음",
-        };
-      })
-      .filter((row) => row.scope !== "영향 없음");
-  }, [
-    afterResource,
-    baseline,
-    impact,
-    regions,
-    resource,
-    selected,
-    selectedRegion,
-    selectedRegionName,
-    service,
-  ]);
-  const improvedScenarioRegions = scenarioRegionalImpact.filter(
-    (row) => row.direction === "개선",
-  );
-  const worsenedScenarioRegions = scenarioRegionalImpact.filter(
-    (row) => row.direction === "악화",
-  );
 
   const directImpacts = impact.filter((r) => r.impact_scope === "직접");
   const indirectImpacts = impact.filter((r) => r.impact_scope === "간접");
@@ -889,54 +530,13 @@ export default function Home() {
           </label>
         </header>
         {view === "overview" && (
-          <section className="portfolio-hero" aria-labelledby="portfolio-title">
-            <div className="hero-copy">
-              <p className="hero-label">PUBLIC DATA · ANALYTICS PORTFOLIO</p>
-              <h2 id="portfolio-title">돌봄자원 랩</h2>
-              <strong>
-                농촌 군의 장기요양 자원 격차를 진단하고 배치전략을 비교하는
-                공공데이터 분석 시뮬레이터
-              </strong>
-              <p>
-                도 소속 76개 군의 공개데이터를 지역·서비스·자원 단위로
-                결합해 공급공백을 탐색하고, 같은 자원 총량을 서로 다른
-                기준으로 배치했을 때의 변화를 비교했습니다.
-              </p>
-              <div className="hero-actions" aria-label="프로젝트 바로가기">
-                <button onClick={startDemo}>30초 데모 보기</button>
-                <button onClick={() => setView("regions")}>대시보드 체험</button>
-                <a href="#key-findings">핵심 결과</a>
-                <a href="#analysis-process">분석 과정</a>
-                <a href={GITHUB_URL} target="_blank" rel="noreferrer">
-                  GitHub 코드
-                </a>
-                <a href={CASE_STUDY_URL} target="_blank" rel="noreferrer">
-                  상세 분석 문서
-                </a>
-              </div>
-            </div>
-            <dl className="hero-facts">
-              <div>
-                <dt>분석 대상</dt>
-                <dd>도 소속 76개 군</dd>
-              </div>
-              <div>
-                <dt>분석 서비스</dt>
-                <dd>방문요양 · 방문간호 · 주야간보호</dd>
-              </div>
-              <div>
-                <dt>데이터 기준</dt>
-                <dd>수요 2026.05 · 공급·인구 2026.06</dd>
-              </div>
-              <div>
-                <dt>주요 방법</dt>
-                <dd>기술·추론통계 · 규칙 기반 배치 · 민감도 분석</dd>
-              </div>
-            </dl>
-          </section>
+          <OverviewHero
+            onCompareAllocation={startAllocationComparison}
+            onOpenWhatIf={startDemo}
+          />
         )}
 
-        <details className="plain-guide" aria-label="화면 설명과 핵심 용어">
+        {view !== "overview" && <details className="plain-guide" aria-label="화면 설명과 핵심 용어">
           <summary>
             <span>화면 읽는 법</span>
             <strong>{guide.title}</strong>
@@ -955,82 +555,47 @@ export default function Home() {
               ))}
             </dl>
           </div>
-        </details>
+        </details>}
 
         {view === "overview" && (
           <>
-            <section className="metric-strip" aria-label="분석 범위">
-              <article>
-                <span>분석 지역</span>
-                <strong>{portfolioSummary?.region_count || visibleRegions.length}</strong>
-                <small>도 소속 군</small>
-              </article>
-              <article>
-                <span>분석 서비스</span>
-                <strong>{portfolioSummary?.service_count || 3}</strong>
-                <small>방문요양 · 방문간호 · 주야간보호</small>
-              </article>
-              <article>
-                <span>서비스×자원 분석축</span>
-                <strong>{portfolioSummary?.resource_dimension_count || 7}</strong>
-                <small>서로 다른 단위는 합산하지 않음</small>
-              </article>
-              <article>
-                <span>기준시점</span>
-                <strong>2026.05–06</strong>
-                <small>수요 05월 · 공급·인구 06월</small>
-              </article>
+            <section className="demo-section" aria-labelledby="demo-title">
+              <div>
+                <span>핵심 전략 비교</span>
+                <h2 id="demo-title">같은 5개 방문간호기관, 우선하는 목표에 따라 배치지역이 달랐습니다.</h2>
+                <div className="strategy-example-grid">
+                  <p><small>많은 잠재수요 고려</small><strong>수요규모 우선</strong><span>배치 대상지역 잠재수요 합계 {fmt(num(portfolioSummary?.demand_proportional_benefited_demand), 0)}명</span></p>
+                  <p><small>기관 공백 완화</small><strong>기관 미관측 우선</strong><span>기관 미관측 상태 {portfolioSummary?.zero_provider_regions_reduced}곳 해소(계산상)</span></p>
+                  <p><small>공급격차 완화</small><strong>공급부족량 우선</strong><span>방문간호·기관 분석축에서 격차가 큰 지역부터 배치</span></p>
+                  <p><small>취약지역 고려</small><strong>지역취약성 우선</strong><span>취약성 백분위가 높은 지역부터 배치</span></p>
+                </div>
+                <p><strong>하나의 최적전략을 선언하기보다, 무엇을 정책목표로 두느냐에 따라 배치안을 비교할 필요가 있었습니다.</strong></p>
+              </div>
+              <button onClick={startAllocationComparison}>배치전략 직접 비교하기 →</button>
             </section>
             <section id="key-findings" className="finding-section">
               <div className="portfolio-section-head">
                 <span>KEY FINDINGS</span>
-                <h2>숫자보다 먼저 읽는 핵심 발견</h2>
-                <p>발견 → 의미 → 의사결정 연결 순서로 정리했습니다.</p>
+                <h2>전략 비교를 뒷받침하는 두 가지 근거</h2>
+                <p>공개자료의 미관측 범위와 단일 지표의 한계를 확인했습니다.</p>
               </div>
               <div className="finding-grid">
                 <article>
-                  <b>01 · 최소서비스 기반</b>
-                  <strong>
-                    방문간호기관 미관측 군 {portfolioSummary?.visit_nursing_provider_missing || 28}곳
-                  </strong>
-                  <p>
-                    76개 군 중 해당 기관이 자료에서 확인되지 않은 지역입니다.
-                    기관 {portfolioSummary?.representative_budget || 5}개 조건에서
-                    기관 미관측 우선전략은 {portfolioSummary?.zero_provider_regions_reduced || 5}곳의
-                    공백을 줄여 최소서비스 기반 검토에 직접 연결됐습니다.
-                  </p>
+                  <b>01 · 공급공백</b>
+                  <strong>76개 군 중 {providerMissingCount("방문간호")}곳에서 방문간호기관이 공개자료상 확인되지 않았습니다.</strong>
+                  <p>주야간보호기관 {providerMissingCount("주야간보호")}곳 · 방문요양기관 {providerMissingCount("방문요양")}곳</p>
+                  <small>기관 미관측은 공개자료에서 기관이 확인되지 않았다는 뜻이며 실제 기관 부재를 확정하지 않습니다.</small>
                   <a href={`${CASE_STUDY_URL}#5-key-findings`} target="_blank" rel="noreferrer">근거 보기 →</a>
                 </article>
                 <article>
-                  <b>02 · 전략의 트레이드오프</b>
-                  <strong>하나의 ‘최적’보다 정책목표별 선택</strong>
+                  <b>02 · 지표 설계 판단</b>
+                  <strong>고령화만으로 공급부족 지역을 설명하기 어려웠습니다.</strong>
                   <p>
-                    수요비례는 인정자 {fmt(num(portfolioSummary?.demand_proportional_benefited_demand || "18193"), 0)}명을
-                    포괄했고, 기관 미관측 우선은 연속형 격차를
-                    {fmt(num(portfolioSummary?.zero_provider_gap_reduction || "4.931"), 3)} 줄였습니다.
-                    수요 포괄과 최소기반 보장은 같은 순위를 만들지 않았습니다.
+                    고령화율만으로 서비스 공급병목을 충분히 설명하기 어려워 수요·기관·인력·정원·공급공백을 함께 고려했습니다.
                   </p>
-                  <a href={`${CASE_STUDY_URL}#5-key-findings`} target="_blank" rel="noreferrer">근거 보기 →</a>
-                </article>
-                <article>
-                  <b>03 · 지표 설계 판단</b>
-                  <strong>고령화만으로 부족지역을 정하지 않음</strong>
-                  <p>
-                    12개 Spearman 검정에서 FDR 5% 기준 유의한 관계가 확인되지
-                    않았습니다. 따라서 고령화율만으로 병목을 설명하기보다
-                    서비스별 공급격차·수요압력·접근공백을 함께 봅니다.
-                  </p>
-                  <a href={`${GITHUB_URL}/blob/main/03_데이터/outputs/day05_hypothesis_testing/q1_vulnerability_supply_spearman.csv`} target="_blank" rel="noreferrer">근거 보기 →</a>
+                  <a href={`${GITHUB_URL}/blob/main/03_데이터/outputs/day05_hypothesis_testing/q1_vulnerability_supply_spearman.csv`} target="_blank" rel="noreferrer">분석 근거 보기 →</a>
                 </article>
               </div>
-            </section>
-            <section className="demo-section" aria-labelledby="demo-title">
-              <div>
-                <span>30 SECOND DEMO</span>
-                <h2 id="demo-title">설정 없이 Before → After를 확인하세요</h2>
-                <p>{DEMO.regionName}의 {DEMO.service} {DEMO.resource} +{DEMO.delta}을 가정한 탐색 시나리오입니다. 지역의 실제 지원 필요를 확정하거나 낙인찍는 결과가 아닙니다.</p>
-              </div>
-              <button onClick={startDemo}>30초 데모 보기 →</button>
             </section>
             <section className="built-section" aria-labelledby="built-title">
               <div className="portfolio-section-head">
@@ -1041,83 +606,8 @@ export default function Home() {
                 <article><b>지역 병목 진단</b><p>서비스별 수요와 기관·인력·정원을 분리해 상대 공급격차를 확인합니다.</p></article>
                 <article><b>What-if 자원 변경</b><p>자원을 증감하고 탐색기준 대비 Before/After를 비교합니다.</p></article>
                 <article><b>자동 자원배치</b><p>같은 총량에서 서로 다른 배치 기준의 결과를 비교합니다.</p></article>
-                <article><b>민감도 및 외부공급</b><p>가정 변화와 권역 자원공유가 계산 결과에 미치는 영향을 확인합니다.</p></article>
+                <article><b>검증 및 민감도 분석</b><p>수요·탐색기준·예산을 바꿔도 결과가 얼마나 유지되는지 점검합니다.</p></article>
               </div>
-            </section>
-            <InsightCallout
-              title={`76개 군 중 ${missingProviders}개 서비스·지역 조합에서 기관이 확인되지 않습니다.`}
-              detail="먼저 살펴볼 지역 목록에서 지역을 고른 뒤, 한 장 진단서에서 어떤 서비스와 자원이 부족한지 확인하세요."
-            />
-            <div className="content-grid overview-grid">
-              <section className="panel urgency-panel">
-                <div className="section-head">
-                  <div>
-                    <span className="section-index">A</span>
-                    <h2>먼저 살펴볼 지역</h2>
-                  </div>
-                  <small>취약성·수요압력·공급부족·공급공백 종합</small>
-                </div>
-                <div className="rank-list">
-                  {topUrgency.map((row) => (
-                    <button
-                      key={row.region_code}
-                      onClick={() => {
-                        setSelectedRegion(row.region_code);
-                        setView("regions");
-                      }}
-                    >
-                      <b>{String(row.urgency_rank).padStart(2, "0")}</b>
-                      <span>
-                        <strong>{row.sigungu_name}</strong>
-                        <small>
-                          {row.top_shortage_service} ·{" "}
-                          {resourceLabel(row.top_shortage_resource_type)}
-                        </small>
-                      </span>
-                      <Bar value={num(row.urgency_score)} max={maxUrgency} />
-                      <em>{fmt(num(row.urgency_score))}</em>
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section className="panel supply-panel">
-                <div className="section-head">
-                  <div>
-                    <span className="section-index">B</span>
-                    <h2>서비스·자원별 탐색기준 대비 추가량</h2>
-                  </div>
-                  <small>각 분석축 안에서만 합산 · 축 간 합계 금지</small>
-                </div>
-                <div className="metric-bars">
-                  {[...metrics]
-                    .sort((a, b) => num(b.total_integer_need) - num(a.total_integer_need))
-                    .map((row) => (
-                      <div key={`${row.service}-${row.resource_type}`}>
-                        <span>
-                          <b>{row.service}</b>
-                          <small>{resourceLabel(row.resource_type)}</small>
-                        </span>
-                        <Bar
-                          value={num(row.total_integer_need)}
-                          max={Math.max(...metrics.map((m) => num(m.total_integer_need)), 1)}
-                          tone={row.service === "방문간호" ? "warm" : "primary"}
-                        />
-                        <strong>{fmt(num(row.total_integer_need), 0)}</strong>
-                      </div>
-                    ))}
-                </div>
-              </section>
-            </div>
-            <section className="insight-band">
-              <div>
-                <span>주변 지역 자원으로 부족 완화</span>
-                <strong>{relievedRegions}개 지역</strong>
-              </div>
-              <p>
-                같은 도의 계산상 잉여공급을 반영하면 다수 지역의 공급격차가
-                완화됩니다. 인접 군 경계자료는 아직 포함하지 않았습니다.
-              </p>
-              <button onClick={() => setView("access")}>접근성 결과 보기 →</button>
             </section>
             <section id="analysis-process" className="process-section">
               <div className="portfolio-section-head">
@@ -1158,6 +648,10 @@ export default function Home() {
                 </li>
               </ol>
             </section>
+            <details className="plain-guide overview-guide" aria-label="분석 기준과 핵심 용어">
+              <summary><span>분석 기준·용어</span><strong>탐색결과를 해석하기 전에 확인하세요</strong><small>용어와 해석 주의사항 펼치기</small></summary>
+              <div className="guide-details"><div className="guide-copy"><p>{guide.summary}</p></div><dl>{guide.terms.map(([term, meaning]) => <div key={term}><dt>{term}</dt><dd>{meaning}</dd></div>)}</dl></div>
+            </details>
             <section className="about-section" aria-labelledby="about-title">
               <div>
                 <span>ABOUT THE PROJECT</span>
@@ -1198,24 +692,32 @@ export default function Home() {
             </div>
             <InsightCallout
               title={`${topUrgency[0]?.sigungu_name || "상위 지역"}부터 현장확인 근거를 살펴보세요.`}
-              detail="순위는 지원 확정순위가 아닙니다. 취약성·수요·공급부족이 함께 큰 지역을 위에 배치한 비교 순서입니다."
+              detail="탐색용 검토 순서는 지원 확정순위가 아닙니다. 분석 목적에 따라 정렬 기준을 바꿔 후보지역이 달라지는지 확인하세요."
             />
+            <label className="province-control region-sort-control">
+              <span>정렬 기준</span>
+              <select value={regionSort} onChange={(e) => setRegionSort(e.target.value)}>
+                <option value="urgency">종합 탐색용 검토 순서</option>
+                <option value="shortage">공급격차</option>
+                <option value="demand">수요부담</option>
+                <option value="vulnerability">지역취약성</option>
+              </select>
+            </label>
             <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>순위</th>
+                    <th>탐색용 순서</th>
                     <th>지역</th>
                     <th>고령화율</th>
                     <th>돌봄수요 부담</th>
                     <th>자원부족 점수</th>
                     <th>가장 부족한 자원</th>
-                    <th>검토 우선순위 점수</th>
+                    <th>선택 지표 점수</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[...visibleRegions]
-                    .sort((a, b) => num(a.urgency_rank) - num(b.urgency_rank))
+                  {sortedRegions
                     .map((row) => (
                       <tr
                         key={row.region_code}
@@ -1226,7 +728,7 @@ export default function Home() {
                           setView("diagnosis");
                         }}
                       >
-                        <td className="rank-cell">{row.urgency_rank}</td>
+                        <td className="rank-cell">{sortedRegions.indexOf(row) + 1}</td>
                         <td>
                           <strong>{row.sigungu_name}</strong>
                           <small>{row.sido_name}</small>
@@ -1239,8 +741,8 @@ export default function Home() {
                           {resourceLabel(row.top_shortage_resource_type)}
                         </td>
                         <td className="urgency-cell">
-                          <Bar value={num(row.urgency_score)} max={70} />
-                          <b>{fmt(num(row.urgency_score))}</b>
+                          <Bar value={num(row[regionSortKeys[regionSort]])} max={regionSortMax} />
+                          <b>{fmt(num(row[regionSortKeys[regionSort]]))}</b>
                         </td>
                       </tr>
                     ))}
@@ -1294,12 +796,12 @@ export default function Home() {
                 <small>초고령 돌봄수요 참고지표</small>
               </article>
               <article>
-                <span>장기요양 잠재수요</span>
+                <span>장기요양 잠재수요 추정치</span>
                 <strong>{fmt(num(selectedRegionName.ltci_demand), 0)}</strong>
-                <small>공통 수요분모</small>
+                <small>공개자료와 비공개 셀 범위를 반영한 추정 중앙값</small>
               </article>
               <article>
-                <span>현장검토 순위</span>
+                <span>현장검토 후보 순서</span>
                 <strong>{selectedRegionName.urgency_rank}위</strong>
                 <small>76개 군 비교 · 배분 확정순위 아님</small>
               </article>
@@ -1375,7 +877,7 @@ export default function Home() {
                 </p>
               </div>
               <details className="score-caution">
-                <summary>지역취약성 점수와 지원 시급성 점수의 차이</summary>
+                <summary>지역취약성 점수와 종합 탐색점수의 차이</summary>
                 <p>
                   지역취약성은 인구·가구·장기요양 특성만 봅니다. 지원
                   시급성은 지역취약성 백분위 30%, 장기요양 수요압력 25%,
@@ -1404,7 +906,7 @@ export default function Home() {
             </section>
             <InsightCallout
               title={`${selectedRegionName.top_shortage_service} ${resourceLabel(selectedRegionName.top_shortage_resource_type)}이 상대적으로 가장 부족합니다.`}
-              detail={`현재 현장검토 순위는 76개 군 중 ${selectedRegionName.urgency_rank}위입니다. 아래 표에서는 이 항목의 현재 수와 부족률부터 확인하세요.`}
+              detail={`현재 현장검토 후보 순서는 76개 군 중 ${selectedRegionName.urgency_rank}번째입니다. 아래 표에서는 이 항목의 현재 수와 부족률부터 확인하세요.`}
             />
 
             <div className="diagnosis-grid">
@@ -1829,8 +1331,8 @@ export default function Home() {
               </div>
               <InsightCallout
                 label="이번 변경의 뜻"
-                title={`${resourceLabel(resource)} ${fmt(num(selected?.current_resource), 0)}개를 ${fmt(afterResource, 0)}개로 바꿉니다.`}
-                detail={`탐색기준 대비 계산상 격차는 ${fmt(num(selected?.continuous_gap), 2)}개에서 ${fmt(afterGap, 2)}개로 ${afterGap <= num(selected?.continuous_gap) ? "줄어듭니다" : "늘어납니다"}.`}
+                title={`${resourceLabel(resource)} ${formatResourceAmount(num(selected?.current_resource), resource)}를 ${formatResourceAmount(afterResource, resource)}로 바꿉니다.`}
+                detail={`탐색기준 대비 계산상 격차는 ${formatResourceAmount(num(selected?.continuous_gap), resource, 2)}에서 ${formatResourceAmount(afterGap, resource, 2)}로 ${afterGap <= num(selected?.continuous_gap) ? "줄어듭니다" : "늘어납니다"}.`}
               />
               <div className="target-explainer">
                 <div>
@@ -1852,22 +1354,22 @@ export default function Home() {
               <div className="before-after">
                 <article>
                   <span>현재</span>
-                  <strong>{fmt(num(selected?.current_resource), 0)}</strong>
+                  <strong>{formatResourceAmount(num(selected?.current_resource), resource)}</strong>
                   <small>잠재수요 1,000명당 {fmt(num(selected?.current_supply_level), 2)}</small>
                 </article>
                 <div className="change-arrow">→</div>
                 <article className="after">
                   <span>변경 후</span>
-                  <strong>{fmt(afterResource, 0)}</strong>
+                  <strong>{formatResourceAmount(afterResource, resource)}</strong>
                   <small>잠재수요 1,000명당 {fmt(afterSupply, 2)}</small>
                 </article>
               </div>
               <div className="comparison-list">
                 <div>
                   <span>탐색기준 대비 계산상 격차</span>
-                  <b>{fmt(num(selected?.continuous_gap), 2)}</b>
+                  <b>{formatResourceAmount(num(selected?.continuous_gap), resource, 2)}</b>
                   <i>→</i>
-                  <strong>{fmt(afterGap, 2)}</strong>
+                  <strong>{formatResourceAmount(afterGap, resource, 2)}</strong>
                 </div>
                 <div>
                   <span>탐색기준 대비 부족률</span>
@@ -1944,7 +1446,7 @@ export default function Home() {
                           </td>
                           <td>{resourceLabel(row.resource_type)}</td>
                           <td className="inventory-number">
-                            {fmt(num(row.current_resource), 0)}
+                            {formatResourceAmount(num(row.current_resource), row.resource_type)}
                           </td>
                           <td>{fmt(num(row.current_supply_level), 2)}</td>
                           <td className={rowDelta < 0 ? "negative" : "positive"}>
@@ -1955,7 +1457,7 @@ export default function Home() {
                               : "—"}
                           </td>
                           <td className="inventory-number">
-                            {isActive ? fmt(rowAfter, 0) : "—"}
+                            {isActive ? formatResourceAmount(rowAfter, row.resource_type) : "—"}
                           </td>
                         </tr>
                       );
@@ -1969,78 +1471,10 @@ export default function Home() {
                 종사자 수입니다.
               </p>
             </section>
-            <section className="panel impact-panel">
-              <div className="section-head">
-                <div>
-                  <span className="section-index">영향</span>
-                  <h2>이 변경으로 개선되는 지역과 악화되는 지역</h2>
-                </div>
-                <small>
-                  선택 지역의 직접영향과 같은 도 외부공급의 계산상 간접영향
-                </small>
-              </div>
-              <div className="impact-summary">
-                <article className="improved">
-                  <span>개선지역</span>
-                  <strong>{improvedScenarioRegions.length}</strong>
-                  <small>공급 부족량이 감소</small>
-                </article>
-                <article className="worsened">
-                  <span>악화지역</span>
-                  <strong>{worsenedScenarioRegions.length}</strong>
-                  <small>공급 부족량이 증가</small>
-                </article>
-                <article>
-                  <span>간접 영향지역</span>
-                  <strong>
-                    {
-                      scenarioRegionalImpact.filter(
-                        (row) =>
-                          row.scope === "간접" &&
-                          row.direction !== "변화 없음",
-                      ).length
-                    }
-                  </strong>
-                  <small>같은 도의 계산상 접근권역</small>
-                </article>
-              </div>
-              <div className="impact-columns">
-                <div>
-                  <h3>개선</h3>
-                  {improvedScenarioRegions.length ? (
-                    improvedScenarioRegions.map((row) => (
-                      <p key={row.region_code}>
-                        <strong>{row.sigungu_name}</strong>
-                        <span>{row.scope}</span>
-                        <b>
-                          부족량 {fmt(Math.abs(num(row.gap_change)), 2)} 감소
-                        </b>
-                      </p>
-                    ))
-                  ) : (
-                    <p className="empty-copy">개선으로 계산된 지역이 없습니다.</p>
-                  )}
-                </div>
-                <div>
-                  <h3>악화</h3>
-                  {worsenedScenarioRegions.length ? (
-                    worsenedScenarioRegions.map((row) => (
-                      <p key={row.region_code}>
-                        <strong>{row.sigungu_name}</strong>
-                        <span>{row.scope}</span>
-                        <b>부족량 {fmt(num(row.gap_change), 2)} 증가</b>
-                      </p>
-                    ))
-                  ) : (
-                    <p className="empty-copy">악화로 계산된 지역이 없습니다.</p>
-                  )}
-                </div>
-              </div>
-              <p className="inventory-note">
-                간접영향은 같은 도의 계산상 잉여공급 공유 가중치를 적용한
-                탐색결과입니다. 실제 이동시간이나 기관의 방문권역을 뜻하지
-                않습니다.
-              </p>
+            <section className="target-definition simulator-access-link">
+              <strong>선택 지역 직접효과만 기본 결과로 표시합니다.</strong>
+              <p>같은 도 자원공유 가능성을 단순화한 간접영향은 실제 이동시간·방문권역·수용가능성을 반영하지 않습니다.</p>
+              <button onClick={() => setView("access")}>탐색적 외부공급 분석 보기 →</button>
             </section>
           </>
         )}
@@ -2187,7 +1621,7 @@ export default function Home() {
                   </button>
                 </label>
                 <label>
-                  고령화 가속 가정{" "}
+                  수요 증가 가속 가정{" "}
                   <strong>매년 +{fmt(demandAcceleration, 1)}%p</strong>
                   <input
                     type="range"
@@ -2199,6 +1633,7 @@ export default function Home() {
                       setDemandAcceleration(Number(event.target.value))
                     }
                   />
+                  <small>0보다 크면 연간 잠재수요 증가율이 해마다 설정한 %p만큼 높아지는 탐색 시나리오입니다.</small>
                   <small className="control-help">
                     0이면 같은 증가율이 유지됩니다. 0보다 크면 고령화가
                     빨라진다고 가정해 수요 증가율이 해마다 높아집니다.
@@ -2239,7 +1674,7 @@ export default function Home() {
                   <span>2026–{2026 + horizon}</span>
                 </div>
                 <div className="demand-forecast-note">
-                  <span>고령화 가속을 반영한 잠재수요</span>
+                  <span>수요 증가 가속을 반영한 시나리오 잠재수요</span>
                   <strong>
                     {fmt(timeline[0]?.demand || 0, 0)}명 →{" "}
                     {fmt(finalTimeline?.demand || 0, 0)}명
@@ -2256,10 +1691,11 @@ export default function Home() {
                     <strong>
                       시작연도에 {resourceLabel(resource)}{" "}
                       {timelineDelta > 0 ? `+${timelineDelta}` : timelineDelta}
+                      {resourceUnit(resource)}
                     </strong>
                   </div>
                   <p>
-                    현재 {fmt(num(selected?.current_resource), 0)}개에서{" "}
+                    현재 {formatResourceAmount(num(selected?.current_resource), resource)}에서{" "}
                     {fmt(
                       Math.max(
                         0,
@@ -2267,20 +1703,20 @@ export default function Home() {
                       ),
                       0,
                     )}
-                    개로 변경한 뒤, 이후 매년{" "}
+                    {resourceUnit(resource)}로 변경한 뒤, 이후 매년{" "}
                     {annualAddition > 0 ? `+${annualAddition}` : annualAddition}
-                    개씩 추가 변경하는 경우를 ‘변경 없음’과 비교합니다.
+                    {resourceUnit(resource)}씩 추가 변경하는 경우를 ‘변경 없음’과 비교합니다.
                   </p>
                 </div>
                 <div className="forecast-kpis">
                   <article>
                     <span>기간 동안 줄인 부족량</span>
-                    <strong>{fmt(cumulativeGapAvoided, 1)}</strong>
+                    <strong>{formatResourceAmount(cumulativeGapAvoided, resource, 1)}</strong>
                     <small>아무것도 바꾸지 않았을 때와 비교</small>
                   </article>
                   <article>
                     <span>마지막 해 부족량 감소</span>
-                    <strong>{fmt(finalGapImprovement, 1)}</strong>
+                    <strong>{formatResourceAmount(finalGapImprovement, resource, 1)}</strong>
                     <small>변경 없음 대비 계산상 감소량</small>
                   </article>
                   <article>
@@ -2307,8 +1743,8 @@ export default function Home() {
                     title="연도별 자원 수"
                     baselineLabel="변경하지 않은 자원"
                     scenarioLabel="변경 시나리오 자원"
-                    unit="개"
-                    takeaway={`마지막 해에 변경 시나리오의 자원이 ${fmt((finalTimeline?.scenarioResource || 0) - (finalTimeline?.baselineResource || 0), 1)}개 더 많습니다.`}
+                    unit={resourceUnit(resource)}
+                    takeaway={`마지막 해에 변경 시나리오의 자원이 ${formatResourceAmount((finalTimeline?.scenarioResource || 0) - (finalTimeline?.baselineResource || 0), resource, 1)} 더 많습니다.`}
                   />
                   <TimelineChart
                     points={timeline}
@@ -2317,8 +1753,8 @@ export default function Home() {
                     title="연도별 탐색기준 대비 계산상 격차"
                     baselineLabel="변경하지 않은 부족량"
                     scenarioLabel="변경 후 부족량"
-                    unit="개"
-                    takeaway={`자원 변경으로 마지막 해의 부족량이 ${fmt(finalGapImprovement, 1)}개 줄어듭니다.`}
+                    unit={resourceUnit(resource)}
+                    takeaway={`자원 변경으로 마지막 해의 부족량이 ${formatResourceAmount(finalGapImprovement, resource, 1)} 줄어듭니다.`}
                   />
                 </div>
               </section>
@@ -2338,7 +1774,7 @@ export default function Home() {
                   <thead>
                     <tr>
                       <th>연도</th>
-                      <th>돌봄 잠재수요</th>
+                      <th>시나리오 잠재수요</th>
                       <th>적용 수요증가율</th>
                       <th>조치하지 않을 때 자원</th>
                       <th>계획을 적용한 자원</th>
@@ -2374,9 +1810,9 @@ export default function Home() {
                         <td>{pct(row.baselineShortage)}</td>
                         <td>{pct(row.scenarioShortage)}</td>
                         <td>
-                          {row.baselineGap <= 1e-9 ? "충족" : "미달"} →{" "}
+                          {row.baselineGap <= 1e-9 ? "탐색기준 이상" : "탐색기준 미만"} →{" "}
                           <strong>
-                            {row.scenarioGap <= 1e-9 ? "충족" : "미달"}
+                            {row.scenarioGap <= 1e-9 ? "탐색기준 이상" : "탐색기준 미만"}
                           </strong>
                         </td>
                       </tr>
@@ -2437,7 +1873,7 @@ export default function Home() {
                   </label>
                 </div>
                 <label>
-                  배치할 총량 <strong>{allocationBudget}</strong>
+                  배치할 총량 <strong>{formatResourceAmount(allocationBudget, resource)}</strong>
                   <input
                     type="range"
                     min={1}
@@ -2449,7 +1885,7 @@ export default function Home() {
                   />
                 </label>
                 <label>
-                  지역당 최대 <strong>{allocationCap}</strong>
+                  지역당 최대 <strong>{formatResourceAmount(allocationCap, resource)}</strong>
                   <input
                     type="range"
                     min={1}
@@ -2467,60 +1903,33 @@ export default function Home() {
                     <header>
                       <div>
                         <span>{result.strategy}</span>
-                        <strong>{result.allocated}개 배치</strong>
+                        <strong>{formatResourceAmount(result.allocated, resource)} 배치</strong>
                       </div>
                       <small>
                         {result.improvedRegions}개 지역 · 부족량{" "}
-                        {fmt(result.gapReduction, 1)} 감소
+                        {formatResourceAmount(result.gapReduction, resource, 1)} 감소
                       </small>
                     </header>
                     <div>
                       {result.items.slice(0, 6).map(({ row, allocated }) => (
                         <p key={row.region_code}>
                           <span>{row.sigungu_name}</span>
-                          <b>+{allocated}</b>
+                          <b>+{formatResourceAmount(allocated, resource)}</b>
                         </p>
                       ))}
                     </div>
                     {result.remaining > 0 && (
-                      <em>조건상 배치하지 못한 자원 {result.remaining}</em>
+                      <em>조건상 배치하지 못한 자원 {formatResourceAmount(result.remaining, resource)}</em>
                     )}
                   </article>
                 ))}
               </div>
             </section>
             <div className="content-grid sensitivity-grid">
-              <section className="panel">
-              <div className="section-head">
-                <div>
-                  <span className="section-index">04</span>
-                  <h2>가정을 바꾸면 부족량이 얼마나 줄까요?</h2>
-                </div>
-                <small>수요·탐색기준·예산·가중치 7개 시나리오</small>
-              </div>
-              <div className="scenario-chart">
-                {[...scenarios]
-                  .sort(
-                    (a, b) =>
-                      num(b.continuous_gap_reduction) -
-                      num(a.continuous_gap_reduction),
-                  )
-                  .map((row) => (
-                    <div key={row.scenario_id}>
-                      <span>{row.scenario_id.replaceAll("_", " ")}</span>
-                      <Bar
-                        value={num(row.continuous_gap_reduction)}
-                        max={Math.max(
-                          ...scenarios.map((s) => num(s.continuous_gap_reduction)),
-                          1,
-                        )}
-                        tone="cool"
-                      />
-                      <b>{fmt(num(row.continuous_gap_reduction), 1)}</b>
-                    </div>
-                  ))}
-              </div>
-            </section>
+              <section className="panel mixed-unit-deprecation">
+                <div className="section-head"><div><span className="section-index">04</span><h2>민감도는 순서의 안정성으로 확인합니다</h2></div></div>
+                <p>과거 전역 부족량 합계는 단위가 다른 기관·서비스 제공인력·정원을 함께 더한 값이므로 공개 성과지표에서 사용 중단했습니다. 절대 격차 감소량은 위 자동배치처럼 선택한 서비스×자원 분석축 안에서만 비교합니다.</p>
+              </section>
             <section className="panel">
               <div className="section-head">
                 <div>
@@ -2534,11 +1943,11 @@ export default function Home() {
                   <article key={row.scenario_id}>
                     <strong>{row.scenario_id.replaceAll("_", " ")}</strong>
                     <div>
-                      <span>우선검토 상위 10개 지역 일치율</span>
+                      <span>탐색용 상위 10개 지역 일치율</span>
                       <b>{pct(num(row.top10_urgency_jaccard))}</b>
                     </div>
                     <div>
-                      <span>전체 우선순위 유사성</span>
+                      <span>전체 탐색 순서 유사성</span>
                       <b>{fmt(num(row.urgency_rank_spearman), 3)}</b>
                     </div>
                     <div>
@@ -2562,6 +1971,10 @@ export default function Home() {
 
         {view === "access" && (
           <>
+            <section className="target-definition access-caution">
+              <strong>탐색적 확장 분석</strong>
+              <p>실제 도로 이동시간이나 서비스 권역이 아니라 같은 도의 자원공유 가능성을 단순화해 살펴보는 탐색 시나리오입니다.</p>
+            </section>
             <section className="metric-strip access-strip">
               <article>
                 <span>같은 도에서 연결 가능한 관계</span>
@@ -2813,8 +2226,9 @@ export default function Home() {
                   </strong>
                 </p>
                 <p>
-                  <span>장기요양 잠재수요</span>
+                  <span>장기요양 잠재수요 추정치</span>
                   <strong>{fmt(num(selectedRegionName.ltci_demand), 0)}</strong>
+                  <small>공개자료와 비공개 셀 범위를 반영한 추정 중앙값</small>
                 </p>
                 <p>
                   <span>가장 부족한 자원</span>
@@ -2826,7 +2240,7 @@ export default function Home() {
                   </strong>
                 </p>
                 <p>
-                  <span>현장검토 순위</span>
+                  <span>현장검토 후보 순서</span>
                   <strong>{selectedRegionName.urgency_rank}위</strong>
                 </p>
               </div>

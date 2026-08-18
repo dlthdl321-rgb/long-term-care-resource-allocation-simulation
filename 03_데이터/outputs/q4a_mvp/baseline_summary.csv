@@ -1,0 +1,2 @@
+﻿region_count,service,resource_type,target_supply_rate,current_resource_total,continuous_gap_total,integer_need_total,target_deficit_regions,provider_missing_regions
+76,visit_care,institution,11.909217437998507,2083.0,108.85944770464454,127,38,0
