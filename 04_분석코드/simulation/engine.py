@@ -1,4 +1,4 @@
-"""Q4-A 기준선, 배치전략, 성과평가와 불변조건 검증."""
+"""대표 기준선, 배치전략, 성과평가와 불변조건 검증."""
 
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ def build_baseline(
         baseline["current_resource"] / baseline["demand_value"] * 1000
     )
     if target_scenario != "county_median":
-        raise ValueError("MVP는 county_median 목표만 지원합니다.")
+        raise ValueError("시나리오는 county_median 목표만 지원합니다.")
     target_rate = float(baseline["current_supply_rate"].median())
     baseline["target_scenario"] = target_scenario
     baseline["target_supply_rate"] = target_rate

@@ -3,7 +3,7 @@ import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
-  const html = await readFile(new URL("../dist-public/static-index.html", import.meta.url), "utf8");
+  const html = await readFile(new URL("../dist-public/index.html", import.meta.url), "utf8");
   return new Response(html, { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
 }
 
@@ -49,14 +49,14 @@ test("ships complete 76-county data and interactive dashboard code", async () =>
       "utf8",
     ),
     readFile(new URL("../public/data/portfolio-summary.json", import.meta.url), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/App.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readFile(new URL("../시뮬레이션_구성_코드/field-support.ts", import.meta.url), "utf8"),
-    readFile(new URL("../lib/format.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/field-support.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/format.ts", import.meta.url), "utf8"),
     readFile(new URL("../../README.md", import.meta.url), "utf8"),
     readFile(new URL("../../CASE_STUDY.md", import.meta.url), "utf8"),
-    readFile(new URL("../views/Overview.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../components/TimelineChart.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/views/Overview.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/TimelineChart.tsx", import.meta.url), "utf8"),
   ]);
 
   const regions = JSON.parse(regionsRaw);
@@ -132,8 +132,8 @@ test("ships complete 76-county data and interactive dashboard code", async () =>
   assert.match(dashboardSource, /chart-end-values/);
   assert.match(page, /시나리오별 상세 수치 펼치기/);
   assert.match(page, /외부공급 상세 계산표 펼치기/);
-  assert.match(page, /지역취약성 점수는 어떻게 계산하나요/);
-  assert.match(page, /취약성 백분위/);
+  assert.match(page, /종합 지역취약성 탐색점수는 어떻게 계산하나요/);
+  assert.match(page, /종합 취약성 탐색 백분위/);
   assert.match(page, /지역취약성 점수와 종합 탐색점수의 차이/);
   assert.match(page, /VULNERABILITY_COMPONENTS/);
   assert.match(dashboardSource, /forecast-line baseline/);
@@ -175,7 +175,7 @@ test("portfolio summary, representative scenario, and documentation links stay c
   await Promise.all([
     access(new URL("../../README.md", import.meta.url)),
     access(new URL("../../CASE_STUDY.md", import.meta.url)),
-    access(new URL("../../03_데이터/outputs/day05_hypothesis_testing/q1_vulnerability_supply_spearman.csv", import.meta.url)),
+    access(new URL("../../03_데이터/outputs/hypothesis_testing/q1_vulnerability_supply_spearman.csv", import.meta.url)),
   ]);
 });
 

@@ -88,7 +88,7 @@ Q1 현재 공급과 상대부족, Q2 기관–제공역량, Q3 지역특성, Q4 
 
 - [Case Study](../CASE_STUDY.md) — 완료된 대표 사례와 판단 과정
 - [핵심 결과표](../03_데이터/outputs/analysis/)
-- [방문간호기관 MVP 결과](../03_데이터/outputs/q4a_visit_nursing_mvp/)
+- [방문간호기관 MVP 결과](../03_데이터/outputs/representative_visit_nursing_allocation/)
 - [재현 코드와 테스트](../04_분석코드/simulation/README.md)
 - 통계학습 및 과제기록(현재 공개 저장소에 포함하지 않음)
 

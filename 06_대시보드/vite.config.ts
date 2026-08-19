@@ -7,10 +7,5 @@ export default defineConfig({
   build: {
     outDir: "dist-public",
     emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        index: "static-index.html",
-      },
-    },
   },
 });

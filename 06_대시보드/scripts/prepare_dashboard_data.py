@@ -196,7 +196,7 @@ write_json("quality", quality)
 # 숫자는 화면에서 다시 입력하지 않고 분석 산출물과 공개 기준선에서 읽는다.
 baseline_rows = json.loads((PUBLIC / "baseline.json").read_text(encoding="utf-8"))
 representative_rows = read_csv(
-    RESULTS / "q4a_visit_nursing_mvp" / "scenario_metrics.csv"
+    RESULTS / "representative_visit_nursing_allocation" / "scenario_metrics.csv"
 )
 representative_by_strategy = {row["strategy"]: row for row in representative_rows}
 visit_nursing_missing = sum(
@@ -221,7 +221,7 @@ portfolio_summary = [{
     "generated_at": "2026-07-27T07:02:27Z",
     "generated_from": (
         "public/data/baseline.json;"
-        "03_데이터/outputs/q4a_visit_nursing_mvp/scenario_metrics.csv"
+        "03_데이터/outputs/representative_visit_nursing_allocation/scenario_metrics.csv"
     ),
 }]
 write_json("portfolio-summary", portfolio_summary)

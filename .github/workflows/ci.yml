@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Test canonical allocation engine
+        run: python -m unittest discover -s "04_분석코드/simulation" -p "test_*.py" -v
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: "06_대시보드/package-lock.json"
+      - name: Install dashboard dependencies
+        working-directory: "06_대시보드"
+        run: npm ci
+      - name: Check dashboard
+        working-directory: "06_대시보드"
+        run: npm run check

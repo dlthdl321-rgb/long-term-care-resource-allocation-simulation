@@ -1,25 +1,25 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
-import { InsightCallout } from "../components/InsightCallout";
-import { MetricBar as Bar } from "../components/MetricBar";
-import { TimelineChart } from "../components/TimelineChart";
-import { calculateAllocations } from "../lib/allocation";
+﻿import { useEffect, useMemo, useState } from "react";
+import { InsightCallout } from "./components/InsightCallout";
+import { MetricBar as Bar } from "./components/MetricBar";
+import { TimelineChart } from "./components/TimelineChart";
+import { calculateAllocations } from "./lib/allocation";
 import {
   DASHBOARD_DATASETS,
   downloadCsv,
   loadDashboardJson,
-} from "../lib/data";
-import { fmt, formatResourceAmount, num, pct, resourceUnit } from "../lib/format";
-import { buildTimelineScenario } from "../lib/timeline";
+} from "./lib/data";
+import { fmt, formatResourceAmount, numberOrZero, pct, resourceUnit } from "./lib/format";
+import { buildTimelineScenario } from "./lib/timeline";
 import type {
   BaselineRow,
   DashboardRow as Row,
   QualityRow,
   RegionRow,
+  ResourceType,
+  ServiceType,
   TimelinePoint,
-} from "../types";
-import { OverviewHero } from "../views/Overview";
+} from "./types";
+import { OverviewHero } from "./views/Overview";
 import {
   actionGuidance,
   comparePreset,
@@ -27,10 +27,10 @@ import {
   fieldSummary,
   reliabilityLabel,
   targetTiers,
-} from "../시뮬레이션_구성_코드/field-support";
+} from "./lib/field-support";
 
 const EMPTY_ROWS: Row[] = [];
-const DEMO = {
+const REPRESENTATIVE_WHATIF = {
   regionCode: "48890",
   regionName: "합천군",
   service: "방문간호",
@@ -61,7 +61,7 @@ const VIEW_GUIDES: Record<
     summary:
       "먼저 살펴볼 지역과 부족한 서비스의 전체 그림입니다. 숫자는 실제 확정 필요량이 아니라, 같은 기준으로 지역을 비교한 계산 결과입니다.",
     terms: [
-      ["기관 미확인", "자료에서 해당 서비스 기관이 확인되지 않은 경우"],
+      ["기관 미관측", "공개자료에서 해당 서비스 기관이 관측되지 않은 경우"],
       ["탐색기준 미만", "현재 공급이 군 분포의 중앙값 기준에 못 미치는 경우"],
       ["탐색용 검토 순서", "현장 확인을 어디부터 시작할지 돕는 비교 순서"],
     ],
@@ -69,7 +69,7 @@ const VIEW_GUIDES: Record<
   regions: {
     title: "지역 순위를 읽는 법",
     summary:
-      "위에 있는 지역일수록 취약성·돌봄수요·자원부족이 함께 큰 편입니다. 행을 누르면 그 지역의 자원을 직접 늘리거나 줄여볼 수 있습니다.",
+      "선택한 정렬기준이 높은 지역이 위에 표시됩니다. 종합 탐색순서는 여러 지표를 함께 본 보조 검토순서입니다.",
     terms: [
       ["돌봄수요 부담", "장기요양 인정자 규모와 증가 흐름을 합친 비교점수"],
       ["공급격차 점수", "기관·서비스 제공인력·정원이 탐색기준보다 낮은 정도"],
@@ -199,8 +199,8 @@ export default function Home() {
   const [error, setError] = useState("");
   const [province, setProvince] = useState("전체");
   const [regionSort, setRegionSort] = useState("urgency");
-  const [service, setService] = useState("방문간호");
-  const [resource, setResource] = useState("기관");
+  const [service, setService] = useState<ServiceType>("방문간호");
+  const [resource, setResource] = useState<ResourceType>("기관");
   const [selectedRegion, setSelectedRegion] = useState("48890");
   const [delta, setDelta] = useState(1);
   const [timelineDelta, setTimelineDelta] = useState(1);
@@ -210,7 +210,7 @@ export default function Home() {
   const [supplyGrowth, setSupplyGrowth] = useState(0);
   const [horizon, setHorizon] = useState(5);
   const [allocationBudget, setAllocationBudget] = useState(5);
-  const [allocationCap, setAllocationCap] = useState(3);
+  const [allocationCap, setAllocationCap] = useState(2);
   const [fieldChecks, setFieldChecks] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -255,17 +255,17 @@ export default function Home() {
     }
   }, [visibleRegions, selectedRegion]);
   const topUrgency = [...visibleRegions]
-    .sort((a, b) => num(a.urgency_rank) - num(b.urgency_rank))
+    .sort((a, b) => numberOrZero(a.urgency_rank) - numberOrZero(b.urgency_rank))
     .slice(0, 10);
   const regionSortKeys: Record<string, string> = {
     urgency: "urgency_score", shortage: "supply_shortage_score",
     demand: "demand_pressure_score", vulnerability: "vulnerability_percentile",
   };
   const sortedRegions = [...visibleRegions].sort(
-    (a, b) => num(b[regionSortKeys[regionSort]]) - num(a[regionSortKeys[regionSort]]),
+    (a, b) => numberOrZero(b[regionSortKeys[regionSort]]) - numberOrZero(a[regionSortKeys[regionSort]]),
   );
   const regionSortMax = Math.max(
-    ...visibleRegions.map((row) => num(row[regionSortKeys[regionSort]])),
+    ...visibleRegions.map((row) => numberOrZero(row[regionSortKeys[regionSort]])),
     1,
   );
   const providerMissingCount = (serviceName: string) =>
@@ -273,13 +273,13 @@ export default function Home() {
       (row) => row.service === serviceName && row.resource_type === "기관" && row.provider_missing === "True",
     ).length;
   const relievedRegions = accessRegions.filter(
-    (r) => num(r.total_access_relief) > 0,
+    (r) => numberOrZero(r.total_access_relief) > 0,
   ).length;
   const startDemo = () => {
-    setSelectedRegion(DEMO.regionCode);
-    setService(DEMO.service);
-    setResource(DEMO.resource);
-    setDelta(DEMO.delta);
+    setSelectedRegion(REPRESENTATIVE_WHATIF.regionCode);
+    setService(REPRESENTATIVE_WHATIF.service);
+    setResource(REPRESENTATIVE_WHATIF.resource);
+    setDelta(REPRESENTATIVE_WHATIF.delta);
     setView("simulator");
     window.history.replaceState(null, "", "#demo");
   };
@@ -287,6 +287,7 @@ export default function Home() {
     setService("방문간호");
     setResource("기관");
     setAllocationBudget(5);
+    setAllocationCap(2);
     setView("sensitivity");
     window.history.replaceState(null, "", "#allocation");
   };
@@ -297,16 +298,16 @@ export default function Home() {
       r.service === service &&
       r.resource_type === resource,
   );
-  const afterResource = Math.max(0, num(selected?.current_resource) + delta);
+  const afterResource = Math.max(0, numberOrZero(selected?.current_resource) + delta);
   const afterSupply = selected
-    ? (afterResource / num(selected.demand_value)) * 1000
+    ? (afterResource / numberOrZero(selected.demand_value)) * 1000
     : 0;
   const afterGap = selected
-    ? Math.max(0, num(selected.target_resource) - afterResource)
+    ? Math.max(0, numberOrZero(selected.target_resource) - afterResource)
     : 0;
   const afterShortage =
-    selected && num(selected.target_supply_level) > 0
-      ? 1 - Math.min(1, afterSupply / num(selected.target_supply_level))
+    selected && numberOrZero(selected.target_supply_level) > 0
+      ? 1 - Math.min(1, afterSupply / numberOrZero(selected.target_supply_level))
       : 0;
   const selectedRegionName = regions.find(
     (r) => r.region_code === selectedRegion,
@@ -326,7 +327,7 @@ export default function Home() {
   const structuralWarning =
     delta > 0 &&
     resource !== "기관" &&
-    num(provider?.current_resource) <= 0;
+    numberOrZero(provider?.current_resource) <= 0;
   const regionInventory = baseline
     .filter((row) => row.region_code === selectedRegion)
     .sort((a, b) => {
@@ -343,24 +344,24 @@ export default function Home() {
   );
   const selectedHistory = history
     .filter((row) => row.region_code === selectedRegion)
-    .sort((a, b) => num(a.year) - num(b.year));
+    .sort((a, b) => numberOrZero(a.year) - numberOrZero(b.year));
   const selectedContributions = accessContributions
     .filter(
       (row) =>
         row.origin_region_code === selectedRegion &&
-        num(row.weighted_external_resource) > 0,
+        numberOrZero(row.weighted_external_resource) > 0,
     )
     .sort(
       (a, b) =>
-        num(b.weighted_external_resource) -
-        num(a.weighted_external_resource),
+        numberOrZero(b.weighted_external_resource) -
+        numberOrZero(a.weighted_external_resource),
     );
   const contributionRegionName = (code: string) =>
     regions.find((row) => row.region_code === code)?.sigungu_name || code;
   const selectedAccess = accessRegions.find(
     (row) => row.region_code === selectedRegion,
   );
-  const selectedAccessRelief = num(selectedAccess?.total_access_relief);
+  const selectedAccessRelief = numberOrZero(selectedAccess?.total_access_relief);
   const fieldConclusions = fieldSummary(
     selectedRegionName,
     selected,
@@ -374,7 +375,7 @@ export default function Home() {
   const fieldTargetTiers = targetTiers(baseline, selected);
   const fieldReliability = reliabilityLabel(
     selected,
-    stability.every((row) => num(row.top10_urgency_jaccard) >= 0.5),
+    stability.every((row) => numberOrZero(row.top10_urgency_jaccard) >= 0.5),
   );
   const fieldScenarioRows = FIELD_SCENARIOS.map((scenario) => {
     const scenarioService = scenario.service || service;
@@ -422,11 +423,11 @@ export default function Home() {
   ]);
 
   const observedDemandAnnual =
-    selectedRegionName && num(selectedRegionName.ltci_demand_growth) > -1
-      ? (Math.pow(1 + num(selectedRegionName.ltci_demand_growth), 1 / 3) - 1) *
+    selectedRegionName && numberOrZero(selectedRegionName.ltci_demand_growth) > -1
+      ? (Math.pow(1 + numberOrZero(selectedRegionName.ltci_demand_growth), 1 / 3) - 1) *
         100
       : 0;
-  const observedSupplyAnnual = num(selectedTrend?.annual_supply_growth) * 100;
+  const observedSupplyAnnual = numberOrZero(selectedTrend?.annual_supply_growth) * 100;
   const timeline = useMemo<TimelinePoint[]>(() => buildTimelineScenario({
     baseline: selected,
     horizon,
@@ -564,10 +565,10 @@ export default function Home() {
                 <span>핵심 전략 비교</span>
                 <h2 id="demo-title">같은 5개 방문간호기관, 우선하는 목표에 따라 배치지역이 달랐습니다.</h2>
                 <div className="strategy-example-grid">
-                  <p><small>많은 잠재수요 고려</small><strong>수요규모 우선</strong><span>배치 대상지역 잠재수요 합계 {fmt(num(portfolioSummary?.demand_proportional_benefited_demand), 0)}명</span></p>
+                  <p><small>많은 잠재수요 고려</small><strong>수요규모 우선</strong><span>배치 대상지역 잠재수요 합계 {fmt(numberOrZero(portfolioSummary?.demand_proportional_benefited_demand), 0)}명</span></p>
                   <p><small>기관 공백 완화</small><strong>기관 미관측 우선</strong><span>기관 미관측 상태 {portfolioSummary?.zero_provider_regions_reduced}곳 해소(계산상)</span></p>
                   <p><small>공급격차 완화</small><strong>공급부족량 우선</strong><span>방문간호·기관 분석축에서 격차가 큰 지역부터 배치</span></p>
-                  <p><small>취약지역 고려</small><strong>지역취약성 우선</strong><span>취약성 백분위가 높은 지역부터 배치</span></p>
+                  <p><small>취약지역 고려</small><strong>지역취약성 우선</strong><span>종합 취약성 탐색 백분위가 높은 지역부터 배치</span></p>
                 </div>
                 <p><strong>하나의 최적전략을 선언하기보다, 무엇을 정책목표로 두느냐에 따라 배치안을 비교할 필요가 있었습니다.</strong></p>
               </div>
@@ -593,7 +594,7 @@ export default function Home() {
                   <p>
                     고령화율만으로 서비스 공급병목을 충분히 설명하기 어려워 수요·기관·인력·정원·공급공백을 함께 고려했습니다.
                   </p>
-                  <a href={`${GITHUB_URL}/blob/main/03_데이터/outputs/day05_hypothesis_testing/q1_vulnerability_supply_spearman.csv`} target="_blank" rel="noreferrer">분석 근거 보기 →</a>
+                  <a href={`${GITHUB_URL}/blob/main/03_데이터/outputs/hypothesis_testing/q1_vulnerability_supply_spearman.csv`} target="_blank" rel="noreferrer">분석 근거 보기 →</a>
                 </article>
               </div>
             </section>
@@ -733,16 +734,16 @@ export default function Home() {
                           <strong>{row.sigungu_name}</strong>
                           <small>{row.sido_name}</small>
                         </td>
-                        <td>{fmt(num(row.aging_rate))}%</td>
-                        <td>{fmt(num(row.demand_pressure_score))}</td>
-                        <td>{fmt(num(row.supply_shortage_score))}</td>
+                        <td>{fmt(numberOrZero(row.aging_rate))}%</td>
+                        <td>{fmt(numberOrZero(row.demand_pressure_score))}</td>
+                        <td>{fmt(numberOrZero(row.supply_shortage_score))}</td>
                         <td>
                           {row.top_shortage_service} ·{" "}
                           {resourceLabel(row.top_shortage_resource_type)}
                         </td>
                         <td className="urgency-cell">
-                          <Bar value={num(row[regionSortKeys[regionSort]])} max={regionSortMax} />
-                          <b>{fmt(num(row[regionSortKeys[regionSort]]))}</b>
+                          <Bar value={numberOrZero(row[regionSortKeys[regionSort]])} max={regionSortMax} />
+                          <b>{fmt(numberOrZero(row[regionSortKeys[regionSort]]))}</b>
                         </td>
                       </tr>
                     ))}
@@ -787,17 +788,17 @@ export default function Home() {
             <section className="diagnosis-kpis">
               <article>
                 <span>고령화율</span>
-                <strong>{fmt(num(selectedRegionName.aging_rate))}%</strong>
+                <strong>{fmt(numberOrZero(selectedRegionName.aging_rate))}%</strong>
                 <small>전체 인구 중 65세 이상 비율</small>
               </article>
               <article>
                 <span>85세 이상 비율</span>
-                <strong>{fmt(num(selectedRegionName.age_85_rate))}%</strong>
+                <strong>{fmt(numberOrZero(selectedRegionName.age_85_rate))}%</strong>
                 <small>초고령 돌봄수요 참고지표</small>
               </article>
               <article>
                 <span>장기요양 잠재수요 추정치</span>
-                <strong>{fmt(num(selectedRegionName.ltci_demand), 0)}</strong>
+                <strong>{fmt(numberOrZero(selectedRegionName.ltci_demand), 0)}</strong>
                 <small>공개자료와 비공개 셀 범위를 반영한 추정 중앙값</small>
               </article>
               <article>
@@ -810,12 +811,12 @@ export default function Home() {
               <div className="section-head">
                 <div>
                   <span className="section-index">취약성</span>
-                  <h2>지역취약성 점수는 어떻게 계산하나요?</h2>
+                  <h2>종합 지역취약성 탐색점수는 어떻게 계산하나요?</h2>
                 </div>
                 <div className="vulnerability-score-head">
-                  <span>취약성 백분위</span>
+                  <span>종합 취약성 탐색 백분위</span>
                   <strong>
-                    {fmt(num(selectedRegionName.vulnerability_percentile), 1)}점
+                    {fmt(numberOrZero(selectedRegionName.vulnerability_percentile), 1)}점
                   </strong>
                 </div>
               </div>
@@ -827,14 +828,14 @@ export default function Home() {
                 <p>
                   각 지표를 76개 군 평균이 0이 되도록 표준화한 뒤 아래
                   가중치를 곱해 더합니다. 원점수{" "}
-                  <b>{fmt(num(selectedRegionName.vulnerability_score), 3)}</b>는
+                  <b>{fmt(numberOrZero(selectedRegionName.vulnerability_score), 3)}</b>는
                   양수면 76개 군 평균보다 취약성이 높은 편, 음수면 낮은
                   편이라는 뜻입니다. 금액·인원·필요자원 수가 아닙니다.
                 </p>
               </div>
               <div className="vulnerability-components">
                 {VULNERABILITY_COMPONENTS.map((component) => {
-                  const z = num(selectedRegionName[component.zKey]);
+                  const z = numberOrZero(selectedRegionName[component.zKey]);
                   return (
                     <article key={component.key}>
                       <header>
@@ -842,7 +843,7 @@ export default function Home() {
                         <b>가중치 {component.weight * 100}%</b>
                       </header>
                       <strong>
-                        {component.format(num(selectedRegionName[component.key]))}
+                        {component.format(numberOrZero(selectedRegionName[component.key]))}
                       </strong>
                       <small>{component.description}</small>
                       <div className={z >= 0 ? "above" : "below"}>
@@ -880,7 +881,7 @@ export default function Home() {
                 <summary>지역취약성 점수와 종합 탐색점수의 차이</summary>
                 <p>
                   지역취약성은 인구·가구·장기요양 특성만 봅니다. 지원
-                  시급성은 지역취약성 백분위 30%, 장기요양 수요압력 25%,
+                  시급성은 지역종합 취약성 탐색 백분위 30%, 장기요양 수요압력 25%,
                   자원부족 35%, 기관 미관측 등 공급공백 10%를 합친 별도
                   점수입니다. 따라서 취약성이 높아도 공급이 충분하면 지원
                   시급성 순위는 낮아질 수 있고, 취약성이 상대적으로 낮아도
@@ -942,9 +943,9 @@ export default function Home() {
                           <td>{row.service}</td>
                           <td>{resourceLabel(row.resource_type)}</td>
                           <td className="inventory-number">
-                            {fmt(num(row.current_resource), 0)}
+                            {fmt(numberOrZero(row.current_resource), 0)}
                           </td>
-                          <td>{pct(num(row.relative_shortage_score))}</td>
+                          <td>{pct(numberOrZero(row.relative_shortage_score))}</td>
                           <td>{row.resource_state}</td>
                         </tr>
                       ))}
@@ -979,13 +980,13 @@ export default function Home() {
                           <td>
                             <strong>{row.service}</strong>
                           </td>
-                          <td>{fmt(num(row.사회복지사), 0)}</td>
-                          <td>{fmt(num(row.간호사), 0)}</td>
-                          <td>{fmt(num(row.간호조무사), 0)}</td>
-                          <td>{fmt(num(row.요양보호사), 0)}</td>
+                          <td>{fmt(numberOrZero(row.사회복지사), 0)}</td>
+                          <td>{fmt(numberOrZero(row.간호사), 0)}</td>
+                          <td>{fmt(numberOrZero(row.간호조무사), 0)}</td>
+                          <td>{fmt(numberOrZero(row.요양보호사), 0)}</td>
                           <td>
                             {fmt(
-                              num(row.물리치료사) + num(row.작업치료사),
+                              numberOrZero(row.물리치료사) + numberOrZero(row.작업치료사),
                               0,
                             )}
                           </td>
@@ -1014,13 +1015,13 @@ export default function Home() {
                 {selectedHistory.map((row) => (
                   <article key={row.year}>
                     <strong>{row.year}</strong>
-                    <span>65세 이상 {fmt(num(row.population_65_plus), 0)}명</span>
+                    <span>65세 이상 {fmt(numberOrZero(row.population_65_plus), 0)}명</span>
                     <span>
                       장기요양 인정 공개값{" "}
-                      {fmt(num(row.ltci_recognized_public), 0)}명
+                      {fmt(numberOrZero(row.ltci_recognized_public), 0)}명
                     </span>
                     <small>
-                      고령화율 {fmt(num(row.aging_rate))}%
+                      고령화율 {fmt(numberOrZero(row.aging_rate))}%
                       {row.suppression_warning ? " · 비공개 셀 주의" : ""}
                     </small>
                   </article>
@@ -1107,7 +1108,7 @@ export default function Home() {
                 </div>
                 <div className="target-tier-list">
                   {fieldTargetTiers.map((tier) => {
-                    const met = num(selected.current_supply_level) >= tier.value;
+                    const met = numberOrZero(selected.current_supply_level) >= tier.value;
                     return (
                       <article key={tier.name}>
                         <span>{tier.name}</span>
@@ -1122,7 +1123,7 @@ export default function Home() {
                 </div>
                 <p className="inventory-note">
                   현재 선택: {service} {resourceLabel(resource)} · 잠재수요
-                  1,000명당 {fmt(num(selected.current_supply_level), 3)}
+                  1,000명당 {fmt(numberOrZero(selected.current_supply_level), 3)}
                 </p>
               </section>
             </div>
@@ -1248,10 +1249,10 @@ export default function Home() {
 
         {view === "simulator" && (
           <>
-            {selectedRegion === DEMO.regionCode && service === DEMO.service && resource === DEMO.resource && delta === DEMO.delta && (
+            {selectedRegion === REPRESENTATIVE_WHATIF.regionCode && service === REPRESENTATIVE_WHATIF.service && resource === REPRESENTATIVE_WHATIF.resource && delta === REPRESENTATIVE_WHATIF.delta && (
               <section className="demo-banner" aria-label="데모 시나리오">
                 <b>데모 시나리오</b>
-                <span>{DEMO.regionName}의 {DEMO.service} {DEMO.resource} +{DEMO.delta}을 가정했습니다.</span>
+                <span>{REPRESENTATIVE_WHATIF.regionName}의 {REPRESENTATIVE_WHATIF.service} {REPRESENTATIVE_WHATIF.resource} +{REPRESENTATIVE_WHATIF.delta}을 가정했습니다.</span>
               </section>
             )}
             <div className="sim-grid">
@@ -1331,15 +1332,15 @@ export default function Home() {
               </div>
               <InsightCallout
                 label="이번 변경의 뜻"
-                title={`${resourceLabel(resource)} ${formatResourceAmount(num(selected?.current_resource), resource)}를 ${formatResourceAmount(afterResource, resource)}로 바꿉니다.`}
-                detail={`탐색기준 대비 계산상 격차는 ${formatResourceAmount(num(selected?.continuous_gap), resource, 2)}에서 ${formatResourceAmount(afterGap, resource, 2)}로 ${afterGap <= num(selected?.continuous_gap) ? "줄어듭니다" : "늘어납니다"}.`}
+                title={`${resourceLabel(resource)} ${formatResourceAmount(numberOrZero(selected?.current_resource), resource)}를 ${formatResourceAmount(afterResource, resource)}로 바꿉니다.`}
+                detail={`탐색기준 대비 계산상 격차는 ${formatResourceAmount(numberOrZero(selected?.continuous_gap), resource, 2)}에서 ${formatResourceAmount(afterGap, resource, 2)}로 ${afterGap <= numberOrZero(selected?.continuous_gap) ? "줄어듭니다" : "늘어납니다"}.`}
               />
               <div className="target-explainer">
                 <div>
                   <span>이 화면의 탐색기준</span>
                   <strong>
                     잠재수요 1,000명당{" "}
-                    {fmt(num(selected?.target_supply_level), 3)}{" "}
+                    {fmt(numberOrZero(selected?.target_supply_level), 3)}{" "}
                     {resourceLabel(resource)}
                   </strong>
                 </div>
@@ -1347,15 +1348,15 @@ export default function Home() {
                   도 소속 76개 군의 {service} {resourceLabel(resource)}{" "}
                   공급수준 중앙값을 탐색 기준으로 사용합니다. 이 지역의 현재
                   수요에 환산한 탐색기준 자원은{" "}
-                  <b>{fmt(num(selected?.target_resource), 2)}</b>입니다. 법정
+                  <b>{fmt(numberOrZero(selected?.target_resource), 2)}</b>입니다. 법정
                   배치기준이나 정부가 확정한 적정 공급량은 아닙니다.
                 </p>
               </div>
               <div className="before-after">
                 <article>
                   <span>현재</span>
-                  <strong>{formatResourceAmount(num(selected?.current_resource), resource)}</strong>
-                  <small>잠재수요 1,000명당 {fmt(num(selected?.current_supply_level), 2)}</small>
+                  <strong>{formatResourceAmount(numberOrZero(selected?.current_resource), resource)}</strong>
+                  <small>잠재수요 1,000명당 {fmt(numberOrZero(selected?.current_supply_level), 2)}</small>
                 </article>
                 <div className="change-arrow">→</div>
                 <article className="after">
@@ -1367,13 +1368,13 @@ export default function Home() {
               <div className="comparison-list">
                 <div>
                   <span>탐색기준 대비 계산상 격차</span>
-                  <b>{formatResourceAmount(num(selected?.continuous_gap), resource, 2)}</b>
+                  <b>{formatResourceAmount(numberOrZero(selected?.continuous_gap), resource, 2)}</b>
                   <i>→</i>
                   <strong>{formatResourceAmount(afterGap, resource, 2)}</strong>
                 </div>
                 <div>
                   <span>탐색기준 대비 부족률</span>
-                  <b>{pct(num(selected?.relative_shortage_score))}</b>
+                  <b>{pct(numberOrZero(selected?.relative_shortage_score))}</b>
                   <i>→</i>
                   <strong>{pct(afterShortage)}</strong>
                 </div>
@@ -1430,7 +1431,7 @@ export default function Home() {
                       const rowDelta = isActive ? delta : 0;
                       const rowAfter = Math.max(
                         0,
-                        num(row.current_resource) + rowDelta,
+                        numberOrZero(row.current_resource) + rowDelta,
                       );
                       return (
                         <tr
@@ -1446,9 +1447,9 @@ export default function Home() {
                           </td>
                           <td>{resourceLabel(row.resource_type)}</td>
                           <td className="inventory-number">
-                            {formatResourceAmount(num(row.current_resource), row.resource_type)}
+                            {formatResourceAmount(numberOrZero(row.current_resource), row.resource_type)}
                           </td>
-                          <td>{fmt(num(row.current_supply_level), 2)}</td>
+                          <td>{fmt(numberOrZero(row.current_supply_level), 2)}</td>
                           <td className={rowDelta < 0 ? "negative" : "positive"}>
                             {isActive
                               ? rowDelta > 0
@@ -1496,9 +1497,9 @@ export default function Home() {
                   <article key={row.year}>
                     <strong>{row.year}</strong>
                     <span>
-                      인정수요 {fmt(num(row.ltci_recognized_public), 0)}
+                      인정수요 {fmt(numberOrZero(row.ltci_recognized_public), 0)}
                     </span>
-                    <small>65세+ {fmt(num(row.population_65_plus), 0)}명</small>
+                    <small>65세+ {fmt(numberOrZero(row.population_65_plus), 0)}명</small>
                   </article>
                 ))}
                 <i>→</i>
@@ -1695,11 +1696,11 @@ export default function Home() {
                     </strong>
                   </div>
                   <p>
-                    현재 {formatResourceAmount(num(selected?.current_resource), resource)}에서{" "}
+                    현재 {formatResourceAmount(numberOrZero(selected?.current_resource), resource)}에서{" "}
                     {fmt(
                       Math.max(
                         0,
-                        num(selected?.current_resource) + timelineDelta,
+                        numberOrZero(selected?.current_resource) + timelineDelta,
                       ),
                       0,
                     )}
@@ -1944,15 +1945,15 @@ export default function Home() {
                     <strong>{row.scenario_id.replaceAll("_", " ")}</strong>
                     <div>
                       <span>탐색용 상위 10개 지역 일치율</span>
-                      <b>{pct(num(row.top10_urgency_jaccard))}</b>
+                      <b>{pct(numberOrZero(row.top10_urgency_jaccard))}</b>
                     </div>
                     <div>
                       <span>전체 탐색 순서 유사성</span>
-                      <b>{fmt(num(row.urgency_rank_spearman), 3)}</b>
+                      <b>{fmt(numberOrZero(row.urgency_rank_spearman), 3)}</b>
                     </div>
                     <div>
                       <span>먼저 검토할 자원 일치율</span>
-                      <b>{pct(num(row.resource_recommendation_match_rate))}</b>
+                      <b>{pct(numberOrZero(row.resource_recommendation_match_rate))}</b>
                     </div>
                   </article>
                 ))}
@@ -2018,11 +2019,11 @@ export default function Home() {
                         <small>{resourceLabel(row.resource_type)}</small>
                       </span>
                       <Bar
-                        value={num(row.gap_relief_rate_before)}
+                        value={numberOrZero(row.gap_relief_rate_before)}
                         max={1}
                         tone="cool"
                       />
-                      <strong>{pct(num(row.gap_relief_rate_before))}</strong>
+                      <strong>{pct(numberOrZero(row.gap_relief_rate_before))}</strong>
                     </div>
                   ))}
                 </div>
@@ -2037,7 +2038,7 @@ export default function Home() {
                 </div>
                 {[...accessRegions]
                   .sort(
-                    (a, b) => num(b.total_access_relief) - num(a.total_access_relief),
+                    (a, b) => numberOrZero(b.total_access_relief) - numberOrZero(a.total_access_relief),
                   )
                   .slice(0, 10)
                   .map((row, index) => (
@@ -2047,7 +2048,7 @@ export default function Home() {
                         <strong>{row.sigungu_name}</strong>
                         <small>{row.sido_name}</small>
                       </span>
-                      <em>{fmt(num(row.total_access_relief), 1)}</em>
+                      <em>{fmt(numberOrZero(row.total_access_relief), 1)}</em>
                     </div>
                   ))}
               </section>
@@ -2083,7 +2084,7 @@ export default function Home() {
                     </strong>
                     <p>
                       {row.service} {resourceLabel(row.resource_type)}{" "}
-                      <b>{fmt(num(row.weighted_external_resource), 2)}</b> 반영
+                      <b>{fmt(numberOrZero(row.weighted_external_resource), 2)}</b> 반영
                     </p>
                   </article>
                 ))}
@@ -2115,11 +2116,11 @@ export default function Home() {
                         </td>
                         <td>{row.service}</td>
                         <td>{resourceLabel(row.resource_type)}</td>
-                        <td>{fmt(num(row.source_current_resource), 1)}</td>
-                        <td>{fmt(num(row.source_available_resource), 1)}</td>
-                        <td>{fmt(num(row.access_weight), 2)}</td>
+                        <td>{fmt(numberOrZero(row.source_current_resource), 1)}</td>
+                        <td>{fmt(numberOrZero(row.source_available_resource), 1)}</td>
+                        <td>{fmt(numberOrZero(row.access_weight), 2)}</td>
                         <td className="inventory-number">
-                          {fmt(num(row.weighted_external_resource), 2)}
+                          {fmt(numberOrZero(row.weighted_external_resource), 2)}
                         </td>
                       </tr>
                     ))}
@@ -2227,7 +2228,7 @@ export default function Home() {
                 </p>
                 <p>
                   <span>장기요양 잠재수요 추정치</span>
-                  <strong>{fmt(num(selectedRegionName.ltci_demand), 0)}</strong>
+                  <strong>{fmt(numberOrZero(selectedRegionName.ltci_demand), 0)}</strong>
                   <small>공개자료와 비공개 셀 범위를 반영한 추정 중앙값</small>
                 </p>
                 <p>

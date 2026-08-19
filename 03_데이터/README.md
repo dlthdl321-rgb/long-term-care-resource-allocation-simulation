@@ -9,7 +9,7 @@
 → data/catalog·data/processed
 → data/analysis_ready
 → 품질검사
-→ outputs/analysis·outputs/day05_hypothesis_testing·outputs/q4a_mvp
+→ outputs/analysis·outputs/hypothesis_testing·outputs/representative_visit_nursing_allocation
 → Dashboard public data
 ```
 

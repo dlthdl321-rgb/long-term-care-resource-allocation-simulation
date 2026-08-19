@@ -1,4 +1,4 @@
-"""설정파일로 선택한 서비스의 기관 5개 Q4-A 최소 시뮬레이션 실행기."""
+"""설정파일로 선택한 서비스의 기관 5개 대표 최소 시뮬레이션 실행기."""
 
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ DEFAULT_METRICS = (
     / "current_region_service_metrics.csv"
 )
 DEFAULT_CONFIG = (
-    PROJECT_ROOT / "03_데이터" / "config" / "q4a_simulation.json"
+    PROJECT_ROOT / "03_데이터" / "config" / "representative_allocation_scenario.json"
 )
 DEFAULT_OUTPUT = (
-    PROJECT_ROOT / "03_데이터" / "outputs" / "q4a_visit_nursing_mvp"
+    PROJECT_ROOT / "03_데이터" / "outputs" / "representative_visit_nursing_allocation"
 )
 
 

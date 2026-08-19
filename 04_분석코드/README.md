@@ -10,8 +10,8 @@ pip install -r requirements.txt
 python "04_분석코드/check_preanalysis_readiness.py"
 python "04_분석코드/check_statistical_readiness.py"
 python "04_분석코드/analyze_ltci_resource_allocation.py"
-python "04_분석코드/analyze_day05_hypothesis_testing.py"
-python "04_분석코드/simulation/run_mvp.py"
+python "04_분석코드/analyze_hypothesis_testing.py"
+python "04_분석코드/simulation/run_allocation_scenarios.py"
 ```
 
 원본 데이터를 다시 수집할 때만 수집 코드를 먼저 실행합니다. API 수집 코드는 공공데이터포털의 `DATA_GO_KR_SERVICE_KEY` 또는 KOSIS의 `KOSIS_API_KEY` 환경변수가 필요할 수 있습니다.
@@ -55,9 +55,9 @@ python "04_분석코드/simulation/run_mvp.py"
 | [`check_preanalysis_readiness.py`](check_preanalysis_readiness.py) | `python "04_분석코드/check_preanalysis_readiness.py"` | 분석용 수요·인구·공급 패널 | 필수 컬럼, 중복, 완전격자, 총량, 분모, 시점 정합성과 재현성을 검사합니다. |
 | [`check_statistical_readiness.py`](check_statistical_readiness.py) | `python "04_분석코드/check_statistical_readiness.py"` | 분석 테이블과 통계 설정 | 변수 분포·표본수·희소성·검정 가능성을 확인하고 서비스별 통계 프로파일을 만듭니다. |
 | [`analyze_ltci_resource_allocation.py`](analyze_ltci_resource_allocation.py) | `python "04_분석코드/analyze_ltci_resource_allocation.py"` | 분석용 데이터와 설정 | 기술통계, 추론통계, 공급병목 지표와 자원배치 시나리오를 계산합니다. |
-| [`analyze_day05_hypothesis_testing.py`](analyze_day05_hypothesis_testing.py) | `python "04_분석코드/analyze_day05_hypothesis_testing.py"` | 76개 군의 수요·인구·공급 테이블 | 대표 Spearman·bootstrap·BH-FDR 결과를 `outputs/day05_hypothesis_testing/`에 생성합니다. |
-| [`simulation/run_mvp.py`](simulation/run_mvp.py) | `python "04_분석코드/simulation/run_mvp.py"` | `q4a_simulation.json`과 분석용 공급자료 | 방문간호기관 5개소의 네 전략 결과를 생성합니다. 상세 설정은 [시뮬레이션 README](simulation/README.md)를 따릅니다. |
-| [`generate_statistical_report.py`](generate_statistical_report.py) | 필요 시 개별 실행 | 통계·검증 산출물 | 이전 전국 범위의 통계보고서를 생성하는 레거시 도구입니다. 현재 방법론의 기준 문서 생성 도구가 아닙니다. |
+| [`analyze_hypothesis_testing.py`](analyze_hypothesis_testing.py) | `python "04_분석코드/analyze_hypothesis_testing.py"` | 76개 군의 수요·인구·공급 테이블 | 대표 Spearman·bootstrap·BH-FDR 결과를 `outputs/hypothesis_testing/`에 생성합니다. |
+| [`simulation/run_allocation_scenarios.py`](simulation/run_allocation_scenarios.py) | `python "04_분석코드/simulation/run_allocation_scenarios.py"` | `representative_allocation_scenario.json`과 분석용 공급자료 | 방문간호기관 5개소의 네 전략 결과를 생성합니다. 상세 설정은 [시뮬레이션 README](simulation/README.md)를 따릅니다. |
+| [`archive/generate_statistical_report.py`](archive/generate_statistical_report.py) | 현재 실행경로에서 제외 | 과거 통계·검증 산출물 | 이전 전국 범위의 통계보고서를 생성하던 레거시 도구입니다. 현재 방법론의 기준 문서 생성 도구가 아닙니다. |
 | [`extract_literature_indicator_context.py`](extract_literature_indicator_context.py) | `python "04_분석코드/extract_literature_indicator_context.py"` | `05_선행연구자료/`의 PDF | 선행연구에서 지표 관련 문맥을 추출하는 보조 코드입니다. 공개 저장소에는 PDF 원문을 포함하지 않습니다. |
 
 ## 테스트

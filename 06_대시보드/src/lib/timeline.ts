@@ -1,5 +1,5 @@
 import type { BaselineRow, TimelinePoint } from "../types";
-import { num } from "./format";
+import { numberOrZero } from "./format";
 
 export function buildTimelineScenario({
   baseline,
@@ -19,7 +19,7 @@ export function buildTimelineScenario({
   annualResourceChange: number;
 }): TimelinePoint[] {
   if (!baseline) return [];
-  let projectedDemand = num(baseline.demand_value);
+  let projectedDemand = numberOrZero(baseline.demand_value);
 
   return Array.from({ length: horizon + 1 }, (_, yearIndex) => {
     const demandGrowthRate =
@@ -29,7 +29,7 @@ export function buildTimelineScenario({
     if (yearIndex > 0) projectedDemand *= 1 + demandGrowthRate / 100;
 
     const baselineResource =
-      num(baseline.current_resource) *
+      numberOrZero(baseline.current_resource) *
       Math.pow(1 + supplyGrowth / 100, yearIndex);
     const scenarioResource = Math.max(
       0,
@@ -37,7 +37,7 @@ export function buildTimelineScenario({
         initialResourceChange +
         annualResourceChange * yearIndex,
     );
-    const targetSupplyLevel = num(baseline.target_supply_level);
+    const targetSupplyLevel = numberOrZero(baseline.target_supply_level);
     const targetResource = (targetSupplyLevel * projectedDemand) / 1000;
     const baselineGap = Math.max(0, targetResource - baselineResource);
     const scenarioGap = Math.max(0, targetResource - scenarioResource);

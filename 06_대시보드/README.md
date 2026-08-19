@@ -16,16 +16,16 @@
 
 ## 코드 구조
 
-- static-index.html → 브라우저가 처음 읽는 HTML
-- static-main.tsx → React 진입점
-- app/page.tsx → 화면 전환과 공유 상태. 지역비교·진단·현장검토·자원변경·Timeline·자동배치·외부공급·보고서 화면이 각각 `view === "..."` 블록으로 구분됨
-- views/Overview.tsx → 첫 화면 Hero
-- components/ → 여러 화면에서 재사용하는 UI
-- lib/data.ts → JSON 로딩과 CSV 저장
-- lib/format.ts → 숫자와 자원 단위 formatting
-- lib/allocation.ts → 자동 자원배치 계산
-- lib/timeline.ts → 연도별 수요·자원 시나리오 계산
-- types.ts → 공통 데이터 타입
+- index.html → 브라우저가 처음 읽는 표준 Vite HTML
+- src/main.tsx → React 진입점
+- src/App.tsx → 전역 데이터·공유 상태·상위 화면 구성
+- src/views/ → 화면별 표현
+- src/components/ → 여러 화면에서 재사용하는 UI
+- src/lib/data.ts → JSON 로딩과 CSV 저장
+- src/lib/format.ts → 숫자와 자원 단위 formatting
+- src/lib/allocation.ts → canonical Python 규칙과 동등한 자동 자원배치 계산
+- src/lib/timeline.ts → 연도별 수요·자원 시나리오 계산
+- src/types.ts → 공통 데이터 타입
 - public/data/ → 분석 코드가 생성하고 Dashboard가 읽는 공개 JSON
 
 ## 실행
@@ -37,7 +37,7 @@ npm install
 npm run dev
 ```
 
-개발 서버는 Vite가 static-index.html → static-main.tsx 경로를 실행합니다.
+개발 서버는 Vite가 `index.html → src/main.tsx → src/App.tsx` 경로를 실행합니다.
 
 ## 검증과 빌드
 

@@ -1,4 +1,4 @@
-"""Day 5 가설검정 과제용 농촌 군×3개 재가서비스 분석."""
+"""도 소속 76개 군×3개 재가서비스 가설검정 분석."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from scipy import stats
 from project_paths import ANALYSIS_READY_DIR, OUTPUTS_DIR
 
 
-OUTPUT_DIR = OUTPUTS_DIR / "day05_hypothesis_testing"
+OUTPUT_DIR = OUTPUTS_DIR / "hypothesis_testing"
 SERVICE_CODES = {
     "방문요양": ["B01", "C01"],
     "방문간호": ["B05", "C05"],
@@ -332,7 +332,7 @@ def main() -> int:
             "normal_ci95": list(map(float, normal_ci)),
         },
     }
-    (OUTPUT_DIR / "day05_summary.json").write_text(
+    (OUTPUT_DIR / "hypothesis_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 

@@ -81,7 +81,7 @@ export function actionGuidance(
   const items: { signal: string; action: string; tone: string }[] = [];
   if (selected.provider_missing === "True" || n(provider?.current_resource) === 0) {
     items.push({
-      signal: "지역 내부 기관 미확인",
+      signal: "지역 내부 기관 미관측",
       action: "신규 설치 가능성 또는 인접·같은 도 연계 가능성을 우선 검토",
       tone: "danger",
     });

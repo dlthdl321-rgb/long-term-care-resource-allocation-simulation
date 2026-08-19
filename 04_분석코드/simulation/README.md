@@ -1,14 +1,14 @@
-# Q4-A 규칙 기반 시뮬레이션
+# 대표 규칙 기반 시뮬레이션
 
-대표 MVP는 도 소속 76개 군의 방문간호기관(`B05+C05`)을 대상으로 배치 전 중앙값 목표와 기관 5개를 사용해 네 위치전략을 비교한다. 방문간호는 기관 미관측 군이 많아 최소서비스 기반과 전략별 차이를 설명하기에 적합하다.
+대표 시나리오는 도 소속 76개 군의 방문간호기관(`B05+C05`)을 대상으로 배치 전 중앙값 목표와 기관 5개를 사용해 네 위치전략을 비교한다. 방문간호는 기관 미관측 군이 많아 최소서비스 기반과 전략별 차이를 설명하기에 적합하다.
 
 ```powershell
 cd "04_분석코드/simulation"
 python -m unittest -v test_engine.py
-python run_mvp.py
+python run_allocation_scenarios.py
 ```
 
-입력 설정은 [`q4a_simulation.json`](../../03_데이터/config/q4a_simulation.json), 결과는 `03_데이터/outputs/q4a_visit_nursing_mvp/`에 저장된다. 설정의 `service_codes`와 `service`를 바꾸면 같은 엔진으로 다른 기관 서비스도 실행할 수 있다.
+입력 설정은 [`representative_allocation_scenario.json`](../../03_데이터/config/representative_allocation_scenario.json), 결과는 `03_데이터/outputs/representative_visit_nursing_allocation/`에 저장된다. 설정의 `service_codes`와 `service`를 바꾸면 같은 엔진으로 다른 기관 서비스도 실행할 수 있다.
 
 ## 구현된 전략
 
