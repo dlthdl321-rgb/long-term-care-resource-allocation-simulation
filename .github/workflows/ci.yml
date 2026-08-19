@@ -17,6 +17,11 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Test canonical allocation engine
         run: python -m unittest discover -s "04_분석코드/simulation" -p "test_*.py" -v
+      - name: Reproduce tracked dashboard datasets
+        working-directory: "06_대시보드"
+        run: |
+          python scripts/prepare_dashboard_data.py
+          git diff --exit-code -- public/data
 
       - uses: actions/setup-node@v4
         with:

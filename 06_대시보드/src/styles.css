@@ -2624,3 +2624,11 @@ th {
   .demo-section,
   .demo-banner { align-items: flex-start; flex-direction: column; }
 }
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}

@@ -148,7 +148,7 @@ test("ships complete 76-county data and interactive dashboard code", async () =>
   for (const forbidden of ["30초 데모", "수혜 인정자", "지원 시급성 순위", "기본목표", "상향목표", "목표미달", "목표 미달", "목표충족", "목표기준", "기관이 없는 군", "고령화 가속", "계산상 기관·인력·정원 합계"]) {
     assert.doesNotMatch(publicCopy, new RegExp(forbidden));
   }
-  for (const required of ["같은 5개의 방문간호기관", "배치전략 비교하기", "배치 대상지역 잠재수요 합계", "기관 미관측 상태", "탐색기준", "종합 탐색점수", "장기요양 잠재수요 추정치", "탐색적 확장 분석"]) {
+  for (const required of ["한정된 장기요양 자원", "대표 5개소·4개 전략 비교하기", "배치 대상지역 잠재수요 합계", "기관 미관측 상태", "탐색기준", "종합 탐색점수", "장기요양 잠재수요 추정치", "탐색적 확장 분석"]) {
     assert.match(publicCopy, new RegExp(required));
   }
   assert.match(page, /formatResourceAmount/);
@@ -157,6 +157,9 @@ test("ships complete 76-county data and interactive dashboard code", async () =>
   assert.doesNotMatch(page, /unit="개"|result\.allocated\}개|current_resource\), 0\)\}개/);
   assert.doesNotMatch(page, /false &&/);
   assert.doesNotMatch(publicCopy, /방문간호기관 5개(?!소|의)/);
+  for (const misleading of ["수혜 인정자", "실제 수혜자", "기관이 없는 지역", "최적 전략"]) {
+    assert.doesNotMatch(publicCopy, new RegExp(misleading));
+  }
 });
 
 test("portfolio summary, representative scenario, and documentation links stay consistent", async () => {
@@ -185,7 +188,7 @@ test("public build contains current hero and excludes obsolete demo copy", async
   const js = files.filter((name) => name.endsWith(".js"));
   assert.ok(js.length > 0);
   const bundle = (await Promise.all(js.map((name) => readFile(new URL(name, assetDir), "utf8")))).join("\n");
-  assert.match(bundle, /같은 5개의 방문간호기관/);
-  assert.match(bundle, /배치전략 비교하기/);
+  assert.match(bundle, /한정된 장기요양 자원/);
+  assert.match(bundle, /대표 5개소·4개 전략 비교하기/);
   assert.doesNotMatch(bundle, /30초 데모 보기/);
 });

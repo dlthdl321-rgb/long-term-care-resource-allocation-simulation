@@ -10,12 +10,11 @@ export const DASHBOARD_DATASETS = [
   "supply-trends",
   "workforce",
   "history",
-  "allocation-strategies",
-  "allocation-detail",
-  "access-contributions",
   "quality",
   "portfolio-summary",
 ] as const;
+
+export const DEFERRED_DASHBOARD_DATASETS = ["access-contributions"] as const;
 
 export async function loadDashboardJson(name: string): Promise<DashboardRow[]> {
   const response = await fetch(`/data/${name}.json`);

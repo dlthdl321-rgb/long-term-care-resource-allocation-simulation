@@ -5,6 +5,7 @@ import { TimelineChart } from "./components/TimelineChart";
 import { calculateAllocations } from "./lib/allocation";
 import {
   DASHBOARD_DATASETS,
+  DEFERRED_DASHBOARD_DATASETS,
   downloadCsv,
   loadDashboardJson,
 } from "./lib/data";
@@ -222,6 +223,18 @@ export default function Home() {
       .then((entries) => setData(Object.fromEntries(entries)))
       .catch((reason) => setError(String(reason)));
   }, []);
+  useEffect(() => {
+    if (view !== "access" || data["access-contributions"]) return;
+    Promise.all(
+      DEFERRED_DASHBOARD_DATASETS.map(
+        async (name) => [name, await loadDashboardJson(name)] as const,
+      ),
+    )
+      .then((entries) =>
+        setData((current) => ({ ...current, ...Object.fromEntries(entries) })),
+      )
+      .catch((reason) => setError(String(reason)));
+  }, [view, data]);
 
   const regions = (data.regions ?? EMPTY_ROWS) as RegionRow[];
   const baseline = (data.baseline ?? EMPTY_ROWS) as BaselineRow[];
@@ -232,8 +245,6 @@ export default function Home() {
   const supplyTrends = data["supply-trends"] ?? EMPTY_ROWS;
   const workforce = data.workforce ?? EMPTY_ROWS;
   const history = data.history ?? EMPTY_ROWS;
-  const allocationStrategies = data["allocation-strategies"] ?? EMPTY_ROWS;
-  const allocationDetail = data["allocation-detail"] ?? EMPTY_ROWS;
   const accessContributions = data["access-contributions"] ?? EMPTY_ROWS;
   const quality = (data.quality ?? EMPTY_ROWS) as QualityRow[];
   const portfolioSummary = data["portfolio-summary"]?.[0];
@@ -570,7 +581,7 @@ export default function Home() {
                   <p><small>공급격차 완화</small><strong>공급부족량 우선</strong><span>방문간호·기관 분석축에서 격차가 큰 지역부터 배치</span></p>
                   <p><small>취약지역 고려</small><strong>지역취약성 우선</strong><span>종합 취약성 탐색 백분위가 높은 지역부터 배치</span></p>
                 </div>
-                <p><strong>하나의 최적전략을 선언하기보다, 무엇을 정책목표로 두느냐에 따라 배치안을 비교할 필요가 있었습니다.</strong></p>
+                <p><strong>단일 우승 전략을 선언하기보다, 무엇을 정책목표로 두느냐에 따라 배치안을 비교할 필요가 있었습니다.</strong></p>
               </div>
               <button onClick={startAllocationComparison}>배치전략 직접 비교하기 →</button>
             </section>
@@ -1315,7 +1326,7 @@ export default function Home() {
               </label>
               {structuralWarning && (
                 <div className="warning">
-                  기관이 없는 지역에는 인력·정원만 단독 추가할 수 없습니다.
+                  공개자료에서 해당 서비스 기관이 관측되지 않은 지역에는 인력·정원만 단독 추가할 수 없습니다.
                 </div>
               )}
               </section>
@@ -1963,9 +1974,8 @@ export default function Home() {
             <p className="footnote">
               자동 배치는 동일 조건에서 생성한 계산안입니다. 기관이 없는
               지역에는 인력·정원만 단독 배치하지 않으며, 실제 예산·채용·시설
-              가능성을 확인한 뒤 사용해야 합니다. 아래 7개 결과는 기존
-              민감도 산출물 {allocationStrategies.length}건과 배치 상세{" "}
-              {allocationDetail.length}행을 요약한 값입니다.
+              가능성을 확인한 뒤 사용해야 합니다. 아래 결과는 저장된 탐색적
+              민감도 스냅샷을 요약한 값입니다.
             </p>
           </>
         )}

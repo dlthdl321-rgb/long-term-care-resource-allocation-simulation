@@ -11,16 +11,6 @@ WEB = Path(__file__).resolve().parents[1]
 PUBLIC = WEB / "public" / "data"
 ANALYSIS = ROOT / "03_데이터" / "data" / "analysis_ready"
 RESULTS = ROOT / "03_데이터" / "outputs"
-STAGE7 = (
-    ROOT
-    / "개발 데이터 초안"
-    / "7단계"
-    / "검증작업"
-    / "simulation_stage7"
-    / "outputs"
-)
-
-
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as file:
         return list(csv.DictReader(file))
@@ -38,7 +28,6 @@ regions = json.loads((PUBLIC / "regions.json").read_text(encoding="utf-8"))
 region_by_name = {
     (row["sido_name"], row["sigungu_name"]): row["region_code"] for row in regions
 }
-region_codes = set(region_by_name.values())
 
 # 직종별 공급: 동일 서비스의 재가노인복지시설·재가장기요양기관 행을 합산한다.
 supply_rows = read_csv(ANALYSIS / "ltci_supply_sigungu_service_type_20260610.csv")
@@ -126,32 +115,6 @@ write_json(
     [row for _, row in sorted(history.items()) if row.get("population_total")],
 )
 
-# 자동배치·민감도 산출물.
-write_json(
-    "allocation-strategies",
-    read_csv(STAGE7 / "project_data_sensitivity" / "scenario_aggregate.csv"),
-)
-write_json(
-    "allocation-detail",
-    read_csv(STAGE7 / "project_data_sensitivity" / "scenario_allocations.csv"),
-)
-
-# 외부공급의 출발지역별 기여량.
-contributions = read_csv(
-    STAGE7
-    / "project_data_accessibility"
-    / "access_contributions_before.csv"
-)
-write_json(
-    "access-contributions",
-    [
-        row
-        for row in contributions
-        if row["origin_region_code"] in region_codes
-        and row["destination_region_code"] in region_codes
-    ],
-)
-
 # 화면·보고서 공통 기준일과 품질 설명.
 quality = [
     {
@@ -218,7 +181,6 @@ portfolio_summary = [{
     "demand_proportional_benefited_demand": demand_strategy["benefited_demand"],
     "zero_provider_gap_reduction": missing_strategy["continuous_gap_reduction"],
     "zero_provider_regions_reduced": missing_strategy["zero_provider_regions_reduced"],
-    "generated_at": "2026-07-27T07:02:27Z",
     "generated_from": (
         "public/data/baseline.json;"
         "03_데이터/outputs/representative_visit_nursing_allocation/scenario_metrics.csv"
@@ -231,8 +193,6 @@ print(
         {
             "workforce": len(workforce_output),
             "history": len(history),
-            "allocations": 137,
-            "contributions": len(contributions),
             "quality": len(quality),
             "portfolio_summary": len(portfolio_summary),
         },

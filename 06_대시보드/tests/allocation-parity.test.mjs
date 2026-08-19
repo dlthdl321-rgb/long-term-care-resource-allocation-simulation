@@ -93,11 +93,35 @@ test("canonical Python representative scenario and TypeScript allocations stay i
     assert.equal(result.remaining, Number(metric.unallocated_resource));
     assert.equal(result.providerMissingReduced, Number(metric.zero_provider_regions_reduced));
     assert.equal(result.targetDeficitRegionsReduced, Number(metric.target_deficit_regions_reduced));
+    assert.equal(
+      result.items.reduce((sum, item) => sum + Number(item.row.demand_value), 0),
+      Number(metric.benefited_demand),
+      `${label} 배치 대상지역 잠재수요 합계`,
+    );
     assert.ok(
       Math.abs(result.gapReduction - Number(metric.continuous_gap_reduction)) < 1e-9,
       `${label} 연속 격차 감소량`,
     );
   }
+});
+
+test("published hypothesis result counts remain canonical", async () => {
+  const summary = JSON.parse(
+    (await readFile(
+      new URL(
+        "../../03_데이터/outputs/hypothesis_testing/hypothesis_summary.json",
+        import.meta.url,
+      ),
+      "utf8",
+    )).replace(/\bNaN\b/g, "null"),
+  );
+  assert.equal(summary.panel.rural_counties, 76);
+  assert.equal(summary.q1_vulnerability_supply.length, 12);
+  assert.equal(
+    summary.q1_vulnerability_supply.filter((row) => row.fdr_reject_0_05).length,
+    0,
+  );
+  assert.equal(summary.q2_institution_capacity.length, 4);
 });
 
 test("numeric parsing preserves missing values and real zero", () => {

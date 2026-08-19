@@ -28,6 +28,8 @@
 - src/types.ts → 공통 데이터 타입
 - public/data/ → 분석 코드가 생성하고 Dashboard가 읽는 공개 JSON
 
+Dataset별 생성기·입력·재현 상태는 [`public/data/README.md`](public/data/README.md)에 구분했습니다. 대표 배치 데이터는 canonical 계산으로 검증하며, 접근성·민감도 확장분석은 생성경로를 임의 복원하지 않고 frozen exploratory snapshot으로 표시합니다.
+
 ## 실행
 
 Node.js 22.13 이상이 필요합니다.
