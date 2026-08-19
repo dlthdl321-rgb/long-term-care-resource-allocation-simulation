@@ -38,6 +38,7 @@ test("ships complete 76-county data and interactive dashboard code", async () =>
     caseStudy,
     overviewSource,
     timelineChartSource,
+    dashboardConfigSource,
   ] = await Promise.all([
     readFile(new URL("../public/data/regions.json", import.meta.url), "utf8"),
     readFile(new URL("../public/data/baseline.json", import.meta.url), "utf8"),
@@ -57,6 +58,7 @@ test("ships complete 76-county data and interactive dashboard code", async () =>
     readFile(new URL("../../CASE_STUDY.md", import.meta.url), "utf8"),
     readFile(new URL("../src/views/Overview.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/TimelineChart.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/dashboard-config.ts", import.meta.url), "utf8"),
   ]);
 
   const regions = JSON.parse(regionsRaw);
@@ -89,16 +91,16 @@ test("ships complete 76-county data and interactive dashboard code", async () =>
   assert.match(page, /과거·미래 변화/);
   assert.match(page, /결정적 시나리오/);
   assert.match(page, /화면 읽는 법/);
-  const dashboardSource = `${page}\n${overviewSource}\n${timelineChartSource}`;
+  const dashboardSource = `${page}\n${overviewSource}\n${timelineChartSource}\n${dashboardConfigSource}`;
   assert.match(dashboardSource, /PUBLIC DATA · ANALYTICS PORTFOLIO/);
   assert.match(dashboardSource, /전략 비교를 뒷받침하는 두 가지 근거/);
   assert.match(dashboardSource, /원자료에서 의사결정 화면까지/);
   assert.doesNotMatch(page, /프로젝트 기간/);
   assert.doesNotMatch(page, /확인 필요/);
-  assert.match(page, /0%면 탐색기준 이상, 100%면 공급이 없는 상태/);
+  assert.match(dashboardSource, /0%면 탐색기준 이상, 100%면 공급이 없는 상태/);
   assert.doesNotMatch(page, /baseline\.reduce\(\(sum, r\) => sum \+ num\(r\.integer_need\)/);
   assert.doesNotMatch(page, /30초 데모/);
-  assert.match(dashboardSource, /핵심 전략 비교/);
+  assert.match(dashboardSource, /대표 시나리오 · 방문간호기관 5개소/);
   assert.match(page, /잠재수요 추정치/);
   assert.match(page, /탐색기준/);
   assert.doesNotMatch(page, /계산상 기관·인력·정원 합계/);
@@ -144,21 +146,23 @@ test("ships complete 76-county data and interactive dashboard code", async () =>
   assert.doesNotMatch(packageJson, /drizzle-(orm|kit)|db:generate/);
   assert.doesNotMatch(page, /row\.continuous_gap_reduction|row\.integer_need_reduction/);
   assert.match(page, /과거 전역 부족량 합계는 단위가 다른 기관·서비스 제공인력·정원을 함께 더한 값/);
-  const publicCopy = `${dashboardSource}\n${fieldSupport}\n${rootReadme}\n${caseStudy}`;
-  for (const forbidden of ["30초 데모", "수혜 인정자", "지원 시급성 순위", "기본목표", "상향목표", "목표미달", "목표 미달", "목표충족", "목표기준", "기관이 없는 군", "고령화 가속", "계산상 기관·인력·정원 합계"]) {
-    assert.doesNotMatch(publicCopy, new RegExp(forbidden));
+  const normalizedPublicCopy = [dashboardSource, fieldSupport, rootReadme, caseStudy]
+    .map((source) => source.replace(/\s+/g, " ").trim())
+    .join(" | ");
+  for (const forbidden of ["30초 데모", "수혜 인정자", "지원 시급성 순위", "기본목표", "상향목표", "목표미달", "목표 미달", "목표충족", "목표기준", "기관이 없는 군", "기관이 없는 지역", "고령화 가속", "고령화가 빨라진다고", "종합 취약성 탐색 백분위가 높은 지역부터 배치", "계산상 기관·인력·정원 합계"]) {
+    assert.doesNotMatch(normalizedPublicCopy, new RegExp(forbidden));
   }
-  for (const required of ["한정된 장기요양 자원", "대표 5개소·4개 전략 비교하기", "배치 대상지역 잠재수요 합계", "기관 미관측 상태", "탐색기준", "종합 탐색점수", "장기요양 잠재수요 추정치", "탐색적 확장 분석"]) {
-    assert.match(publicCopy, new RegExp(required));
+  for (const required of ["한정된 장기요양 자원", "대표 5개소·4개 전략 비교하기", "배치 대상지역 잠재수요 합계", "기관 미관측 상태", "기관 미관측", "탐색기준", "종합 탐색점수", "종합 지역취약성 탐색점수", "배치용 취약성", "잠재수요 증가율", "장기요양 잠재수요 추정치", "탐색적 확장 분석"]) {
+    assert.match(normalizedPublicCopy, new RegExp(required));
   }
   assert.match(page, /formatResourceAmount/);
   assert.match(page, /resourceUnit/);
   assert.match(formatSource, /resourceType === "기관" \? "개소" : "명"/);
   assert.doesNotMatch(page, /unit="개"|result\.allocated\}개|current_resource\), 0\)\}개/);
   assert.doesNotMatch(page, /false &&/);
-  assert.doesNotMatch(publicCopy, /방문간호기관 5개(?!소|의)/);
+  assert.doesNotMatch(normalizedPublicCopy, /방문간호기관 5개(?!소|의)/);
   for (const misleading of ["수혜 인정자", "실제 수혜자", "기관이 없는 지역", "최적 전략"]) {
-    assert.doesNotMatch(publicCopy, new RegExp(misleading));
+    assert.doesNotMatch(normalizedPublicCopy, new RegExp(misleading));
   }
 });
 

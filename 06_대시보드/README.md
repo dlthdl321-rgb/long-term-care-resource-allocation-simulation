@@ -55,7 +55,7 @@ npm run preview
 
 ## 데이터 갱신
 
-대시보드의 `public/data/*.json`은 저장소 분석 산출물에서 생성됩니다. 원본·중간·결과 파일의 계보는 상위 경로의 [`03_데이터/README.md`](../03_데이터/README.md), 분석 재현은 [`04_분석코드/README.md`](../04_분석코드/README.md)를 참고하세요.
+`workforce`, `history`, `quality`, `portfolio-summary` 등 재현 가능한 파생 JSON은 `scripts/prepare_dashboard_data.py`로 갱신합니다. `baseline`, `regions`와 탐색적 frozen snapshot은 [`public/data/README.md`](public/data/README.md)의 lineage 분류를 따릅니다. 전체 원본·중간·결과 계보는 상위 [`03_데이터/README.md`](../03_데이터/README.md), 분석 재현은 [`04_분석코드/README.md`](../04_분석코드/README.md)를 참고하세요.
 
 ```bash
 python scripts/prepare_dashboard_data.py

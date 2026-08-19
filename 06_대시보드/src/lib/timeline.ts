@@ -1,5 +1,5 @@
 import type { BaselineRow, TimelinePoint } from "../types";
-import { numberOrZero } from "./format";
+import { requireNumber } from "./format";
 
 export function buildTimelineScenario({
   baseline,
@@ -19,7 +19,13 @@ export function buildTimelineScenario({
   annualResourceChange: number;
 }): TimelinePoint[] {
   if (!baseline) return [];
-  let projectedDemand = numberOrZero(baseline.demand_value);
+  let projectedDemand = requireNumber(baseline.demand_value, "demand_value");
+  if (projectedDemand <= 0) throw new Error("demand_value는 양수여야 합니다.");
+  const currentResource = requireNumber(baseline.current_resource, "current_resource");
+  const targetSupplyLevel = requireNumber(
+    baseline.target_supply_level,
+    "target_supply_level",
+  );
 
   return Array.from({ length: horizon + 1 }, (_, yearIndex) => {
     const demandGrowthRate =
@@ -29,7 +35,7 @@ export function buildTimelineScenario({
     if (yearIndex > 0) projectedDemand *= 1 + demandGrowthRate / 100;
 
     const baselineResource =
-      numberOrZero(baseline.current_resource) *
+      currentResource *
       Math.pow(1 + supplyGrowth / 100, yearIndex);
     const scenarioResource = Math.max(
       0,
@@ -37,7 +43,6 @@ export function buildTimelineScenario({
         initialResourceChange +
         annualResourceChange * yearIndex,
     );
-    const targetSupplyLevel = numberOrZero(baseline.target_supply_level);
     const targetResource = (targetSupplyLevel * projectedDemand) / 1000;
     const baselineGap = Math.max(0, targetResource - baselineResource);
     const scenarioGap = Math.max(0, targetResource - scenarioResource);

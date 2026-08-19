@@ -9,7 +9,7 @@ import {
   downloadCsv,
   loadDashboardJson,
 } from "./lib/data";
-import { fmt, formatResourceAmount, numberOrZero, pct, resourceUnit } from "./lib/format";
+import { fmt, formatResourceAmount, numberOrZero, parseNumber, pct, requireNumber, resourceUnit } from "./lib/format";
 import { buildTimelineScenario } from "./lib/timeline";
 import type {
   BaselineRow,
@@ -21,6 +21,7 @@ import type {
   TimelinePoint,
 } from "./types";
 import { OverviewHero } from "./views/Overview";
+import { resourceLabel, VIEW_GUIDES, VULNERABILITY_COMPONENTS, type View } from "./dashboard-config";
 import {
   actionGuidance,
   comparePreset,
@@ -38,161 +39,9 @@ const REPRESENTATIVE_WHATIF = {
   resource: "기관",
   delta: 1,
 } as const;
-type View =
-  | "overview"
-  | "regions"
-  | "diagnosis"
-  | "field"
-  | "simulator"
-  | "timeline"
-  | "sensitivity"
-  | "access"
-  | "reports";
-
 const GITHUB_URL =
   "https://github.com/dlthdl321-rgb/long-term-care-resource-allocation-simulation";
 const CASE_STUDY_URL = `${GITHUB_URL}/blob/main/CASE_STUDY.md`;
-
-const VIEW_GUIDES: Record<
-  View,
-  { title: string; summary: string; terms: [string, string][] }
-> = {
-  overview: {
-    title: "처음이라면 여기부터 보세요",
-    summary:
-      "먼저 살펴볼 지역과 부족한 서비스의 전체 그림입니다. 숫자는 실제 확정 필요량이 아니라, 같은 기준으로 지역을 비교한 계산 결과입니다.",
-    terms: [
-      ["기관 미관측", "공개자료에서 해당 서비스 기관이 관측되지 않은 경우"],
-      ["탐색기준 미만", "현재 공급이 군 분포의 중앙값 기준에 못 미치는 경우"],
-      ["탐색용 검토 순서", "현장 확인을 어디부터 시작할지 돕는 비교 순서"],
-    ],
-  },
-  regions: {
-    title: "지역 순위를 읽는 법",
-    summary:
-      "선택한 정렬기준이 높은 지역이 위에 표시됩니다. 종합 탐색순서는 여러 지표를 함께 본 보조 검토순서입니다.",
-    terms: [
-      ["돌봄수요 부담", "장기요양 인정자 규모와 증가 흐름을 합친 비교점수"],
-      ["공급격차 점수", "기관·서비스 제공인력·정원이 탐색기준보다 낮은 정도"],
-      ["탐색용 순서", "자원 배분 확정 순위가 아닌 현장검토 시작 순서"],
-    ],
-  },
-  diagnosis: {
-    title: "한 지역의 근거를 한 장에서 확인하세요",
-    summary:
-      "인구·장기요양 수요·현재 자원·직종별 인력·부족도·외부공급을 한곳에 모았습니다. 숫자 옆의 기준일과 경고까지 함께 확인하세요.",
-    terms: [
-      ["현재 자원", "최신 공개자료에서 집계된 기관·인력·정원"],
-      ["서비스 제공인력", "서비스별 분석에 사용한 주요 종사자 합계"],
-      ["한 장 진단서", "배치 확정서가 아닌 현장확인을 위한 근거 요약"],
-    ],
-  },
-  field: {
-    title: "결과를 실제 검토업무로 연결하세요",
-    summary:
-      "자동 결론과 검토문구를 먼저 읽고, 현실적인 사전 시나리오와 탐색기준별 차이를 비교한 뒤 담당자 체크리스트를 남기는 화면입니다.",
-    terms: [
-      ["우선 검토지역", "지원 확정지역이 아니라 현장확인을 먼저 시작할 후보"],
-      ["조건부 배치안", "설치·인력·예산 가능성을 확인하기 전의 계산 비교안"],
-      ["신뢰 표시", "자료 누락과 가정 민감도를 함께 알리는 해석 주의등급"],
-    ],
-  },
-  simulator: {
-    title: "자원 수를 바꾸는 방법",
-    summary:
-      "지역과 서비스를 고른 뒤 변경량을 움직이세요. +는 추가, −는 감축입니다. 오른쪽에서 변경 전후의 부족 정도를 바로 비교할 수 있습니다.",
-    terms: [
-      ["공급수준", "잠재수요 1,000명당 기관·서비스 제공인력·정원 수"],
-      ["탐색기준 대비 계산상 격차", "군 분포의 중앙값 수준까지 계산상 벌어진 자원 격차"],
-      ["탐색기준 대비 부족률", "0%면 탐색기준 이상, 100%면 공급이 없는 상태"],
-    ],
-  },
-  timeline: {
-    title: "시간에 따른 변화를 보는 방법",
-    summary:
-      "한 번만 바꾸는 자원과 매년 반복되는 증감을 나눠 입력하세요. 주황선은 아무 조치가 없을 때, 초록선은 선택한 계획을 적용했을 때입니다.",
-    terms: [
-      ["수요 변화율", "돌봄이 필요할 가능성이 있는 인구가 매년 변하는 비율"],
-      ["공급 변화율", "기존 자원이 자연적으로 늘거나 줄어드는 비율"],
-      ["시나리오", "입력한 조건이 계속된다고 가정한 계산이며 미래 확정값은 아님"],
-    ],
-  },
-  sensitivity: {
-    title: "결과가 얼마나 흔들리는지 확인하세요",
-    summary:
-      "탐색기준·수요·예산 같은 가정을 바꿔도 비슷한 지역이 계속 상위에 남는지 확인하는 화면입니다. 일치율이 높을수록 결과가 비교적 안정적입니다.",
-    terms: [
-      ["기준안(BASE)", "현재 설정한 기본 조건"],
-      ["상위 10 일치율", "기준안과 비교안에 공통으로 포함된 지역의 비율"],
-      ["순위상관", "1에 가까울수록 두 조건의 지역 순서가 비슷함"],
-    ],
-  },
-  access: {
-    title: "주변 지역의 도움까지 포함해 보세요",
-    summary:
-      "우리 군 안의 자원만 보지 않고, 같은 도의 남는 자원에 접근할 수 있다고 가정했을 때 부족이 얼마나 줄어드는지 보여줍니다.",
-    terms: [
-      ["접근 가능한 공급", "다른 지역에 있지만 계산상 이용할 수 있다고 본 자원"],
-      ["완충효과", "주변 지역 자원을 반영해 줄어든 공급부족"],
-      ["간접 영향", "한 지역의 자원변경이 주변 지역 계산에도 미치는 변화"],
-    ],
-  },
-  reports: {
-    title: "결과와 근거를 함께 내려받으세요",
-    summary:
-      "선택 지역의 진단 결과는 CSV로 내려받고, 인쇄 화면에서는 PDF로 저장할 수 있습니다. 자료 기준일과 해석 주의사항도 보고서에 포함됩니다.",
-    terms: [
-      ["CSV", "표 계산과 추가 분석에 적합한 데이터 파일"],
-      ["PDF", "브라우저 인쇄 메뉴에서 PDF로 저장하는 한 장 보고서"],
-      ["품질 경고", "기준일 차이·비공개·접근성 가정을 알려주는 주의사항"],
-    ],
-  },
-};
-
-const resourceLabel = (value: string) =>
-  value === "핵심인력" ? "서비스 제공인력" : value;
-const VULNERABILITY_COMPONENTS = [
-  {
-    key: "aging_rate",
-    zKey: "z_aging_rate",
-    label: "고령화율",
-    weight: 0.2,
-    description: "전체 인구 중 65세 이상 인구 비율",
-    format: (value: number) => `${fmt(value)}%`,
-  },
-  {
-    key: "age_85_rate",
-    zKey: "z_age_85_rate",
-    label: "85세 이상 비율",
-    weight: 0.2,
-    description: "전체 인구 중 85세 이상 인구 비율",
-    format: (value: number) => `${fmt(value)}%`,
-  },
-  {
-    key: "elderly_single_household_burden",
-    zKey: "z_elderly_single_household_burden",
-    label: "고령 1인세대 부담",
-    weight: 0.2,
-    description: "65세 이상 인구 100명당 고령 1인세대 수",
-    format: (value: number) => `${fmt(value)}명`,
-  },
-  {
-    key: "ltci_recognition_rate",
-    zKey: "z_ltci_recognition_rate",
-    label: "장기요양 인정자 비율",
-    weight: 0.25,
-    description: "65세 이상 인구 중 장기요양 인정자 비율",
-    format: (value: number) => `${fmt(value)}%`,
-  },
-  {
-    key: "ltci_demand_growth",
-    zKey: "z_ltci_demand_growth",
-    label: "장기요양 수요 증가율",
-    weight: 0.15,
-    description: "분석기간의 장기요양 인정수요 증가 정도",
-    format: (value: number) => `${fmt(value * 100)}%`,
-  },
-] as const;
 
 export default function Home() {
   const [view, setView] = useState<View>("overview");
@@ -309,16 +158,31 @@ export default function Home() {
       r.service === service &&
       r.resource_type === resource,
   );
-  const afterResource = Math.max(0, numberOrZero(selected?.current_resource) + delta);
+  const selectedCurrent = selected
+    ? requireNumber(selected.current_resource, "current_resource")
+    : 0;
+  const selectedDemand = selected
+    ? requireNumber(selected.demand_value, "demand_value")
+    : null;
+  if (selectedDemand !== null && selectedDemand <= 0) {
+    throw new Error("demand_value는 양수여야 합니다.");
+  }
+  const selectedTarget = selected
+    ? requireNumber(selected.target_resource, "target_resource")
+    : null;
+  const selectedTargetSupply = selected
+    ? requireNumber(selected.target_supply_level, "target_supply_level")
+    : null;
+  const afterResource = Math.max(0, selectedCurrent + delta);
   const afterSupply = selected
-    ? (afterResource / numberOrZero(selected.demand_value)) * 1000
+    ? (afterResource / selectedDemand!) * 1000
     : 0;
   const afterGap = selected
-    ? Math.max(0, numberOrZero(selected.target_resource) - afterResource)
+    ? Math.max(0, selectedTarget! - afterResource)
     : 0;
   const afterShortage =
-    selected && numberOrZero(selected.target_supply_level) > 0
-      ? 1 - Math.min(1, afterSupply / numberOrZero(selected.target_supply_level))
+    selected && selectedTargetSupply! > 0
+      ? 1 - Math.min(1, afterSupply / selectedTargetSupply!)
       : 0;
   const selectedRegionName = regions.find(
     (r) => r.region_code === selectedRegion,
@@ -335,10 +199,12 @@ export default function Home() {
       r.service === service &&
       r.resource_type === "기관",
   );
+  const providerResource = parseNumber(provider?.current_resource);
   const structuralWarning =
     delta > 0 &&
     resource !== "기관" &&
-    numberOrZero(provider?.current_resource) <= 0;
+    providerResource !== null &&
+    providerResource <= 0;
   const regionInventory = baseline
     .filter((row) => row.region_code === selectedRegion)
     .sort((a, b) => {
@@ -573,13 +439,13 @@ export default function Home() {
           <>
             <section className="demo-section" aria-labelledby="demo-title">
               <div>
-                <span>핵심 전략 비교</span>
+                <span>대표 시나리오 · 방문간호기관 5개소</span>
                 <h2 id="demo-title">같은 5개 방문간호기관, 우선하는 목표에 따라 배치지역이 달랐습니다.</h2>
                 <div className="strategy-example-grid">
                   <p><small>많은 잠재수요 고려</small><strong>수요규모 우선</strong><span>배치 대상지역 잠재수요 합계 {fmt(numberOrZero(portfolioSummary?.demand_proportional_benefited_demand), 0)}명</span></p>
                   <p><small>기관 공백 완화</small><strong>기관 미관측 우선</strong><span>기관 미관측 상태 {portfolioSummary?.zero_provider_regions_reduced}곳 해소(계산상)</span></p>
                   <p><small>공급격차 완화</small><strong>공급부족량 우선</strong><span>방문간호·기관 분석축에서 격차가 큰 지역부터 배치</span></p>
-                  <p><small>취약지역 고려</small><strong>지역취약성 우선</strong><span>종합 취약성 탐색 백분위가 높은 지역부터 배치</span></p>
+                  <p><small>취약지역 고려</small><strong>지역취약성 우선</strong><span>배치용 취약성 점수가 높은 지역부터 배치(고령화율 50% + 고령 1인세대 부담 50%)</span></p>
                 </div>
                 <p><strong>단일 우승 전략을 선언하기보다, 무엇을 정책목표로 두느냐에 따라 배치안을 비교할 필요가 있었습니다.</strong></p>
               </div>
@@ -593,7 +459,7 @@ export default function Home() {
               </div>
               <div className="finding-grid">
                 <article>
-                  <b>01 · 공급공백</b>
+                  <b>01 · 공급기반 공백</b>
                   <strong>76개 군 중 {providerMissingCount("방문간호")}곳에서 방문간호기관이 공개자료상 확인되지 않았습니다.</strong>
                   <p>주야간보호기관 {providerMissingCount("주야간보호")}곳 · 방문요양기관 {providerMissingCount("방문요양")}곳</p>
                   <small>기관 미관측은 공개자료에서 기관이 확인되지 않았다는 뜻이며 실제 기관 부재를 확정하지 않습니다.</small>
@@ -603,7 +469,7 @@ export default function Home() {
                   <b>02 · 지표 설계 판단</b>
                   <strong>고령화만으로 공급부족 지역을 설명하기 어려웠습니다.</strong>
                   <p>
-                    고령화율만으로 서비스 공급병목을 충분히 설명하기 어려워 수요·기관·인력·정원·공급공백을 함께 고려했습니다.
+                    고령화율만으로 서비스 공급병목을 충분히 설명하기 어려워 수요·기관·인력·정원·공급기반 공백을 함께 고려했습니다.
                   </p>
                   <a href={`${GITHUB_URL}/blob/main/03_데이터/outputs/hypothesis_testing/q1_vulnerability_supply_spearman.csv`} target="_blank" rel="noreferrer">분석 근거 보기 →</a>
                 </article>
@@ -712,7 +578,7 @@ export default function Home() {
                 <option value="urgency">종합 탐색용 검토 순서</option>
                 <option value="shortage">공급격차</option>
                 <option value="demand">수요부담</option>
-                <option value="vulnerability">지역취약성</option>
+                <option value="vulnerability">종합 지역취약성 탐색점수</option>
               </select>
             </label>
             <div className="table-wrap">
@@ -891,12 +757,10 @@ export default function Home() {
               <details className="score-caution">
                 <summary>지역취약성 점수와 종합 탐색점수의 차이</summary>
                 <p>
-                  지역취약성은 인구·가구·장기요양 특성만 봅니다. 지원
-                  시급성은 지역종합 취약성 탐색 백분위 30%, 장기요양 수요압력 25%,
-                  자원부족 35%, 기관 미관측 등 공급공백 10%를 합친 별도
-                  점수입니다. 따라서 취약성이 높아도 공급이 충분하면 지원
-                  시급성 순위는 낮아질 수 있고, 취약성이 상대적으로 낮아도
-                  기관이 없거나 자원부족이 크면 시급성 순위가 높아질 수
+                  종합 지역취약성 탐색점수는 인구·가구·장기요양 특성을 함께 봅니다. 종합 탐색점수는 종합 지역취약성 탐색 백분위 30%, 장기요양 수요압력 25%,
+                  자원부족 35%, 기관 미관측 등 공급기반 공백 10%를 합친 별도
+                  점수입니다. 따라서 종합 지역취약성이 높아도 공급이 충분하면 탐색용 검토 순서는 낮아질 수 있고, 취약성이 상대적으로 낮아도
+                  기관 미관측 또는 자원부족이 크면 탐색용 검토 순서는 높아질 수
                   있습니다.
                 </p>
               </details>
@@ -1647,8 +1511,8 @@ export default function Home() {
                   />
                   <small>0보다 크면 연간 잠재수요 증가율이 해마다 설정한 %p만큼 높아지는 탐색 시나리오입니다.</small>
                   <small className="control-help">
-                    0이면 같은 증가율이 유지됩니다. 0보다 크면 고령화가
-                    빨라진다고 가정해 수요 증가율이 해마다 높아집니다.
+                    0이면 같은 증가율을 유지합니다. 0보다 크면 잠재수요
+                    증가율이 해마다 설정한 %p만큼 높아집니다.
                   </small>
                 </label>
                 <label>
@@ -1972,8 +1836,8 @@ export default function Home() {
               </section>
             </div>
             <p className="footnote">
-              자동 배치는 동일 조건에서 생성한 계산안입니다. 기관이 없는
-              지역에는 인력·정원만 단독 배치하지 않으며, 실제 예산·채용·시설
+                  자동 배치는 동일 조건에서 생성한 계산안입니다. 지역 내부 기관이
+                  미관측된 곳에는 인력·정원만 단독 배치하지 않으며, 실제 예산·채용·시설
               가능성을 확인한 뒤 사용해야 합니다. 아래 결과는 저장된 탐색적
               민감도 스냅샷을 요약한 값입니다.
             </p>
